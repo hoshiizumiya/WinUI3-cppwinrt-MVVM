@@ -1,0 +1,8 @@
+namespace XamlUICommand
+{
+    [default_interface]
+    runtimeclass NodeGraphPage : Microsoft.UI.Xaml.Controls.Page
+    {
+        NodeGraphPage();
+    }
+}

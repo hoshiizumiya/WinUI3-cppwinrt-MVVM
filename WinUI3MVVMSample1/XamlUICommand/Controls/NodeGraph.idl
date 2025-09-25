@@ -1,0 +1,100 @@
+namespace XamlUICommand
+{
+    enum NodeShape
+    {
+        Circle = 0,
+        RoundedRect = 1,
+    };
+
+    [default_interface]
+    runtimeclass NodeViewModel : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        NodeViewModel();
+        
+        Int64 Id;
+        String Label;
+        Windows.Foundation.Point Position;  // Canvas coordinates (in DIPs)
+        Windows.Foundation.Size Size;       // Node size; for Circle: Width == Height => diameter
+        Boolean IsSelected;
+        NodeShape Shape;
+
+        // Extended metadata as key-value pairs; values are boxed types (IPropertyValue)
+        Windows.Foundation.Collections.IMap<String, Object> Meta;
+
+        // When not empty, Label is taken from Meta[LabelMetaKey]
+        String LabelMetaKey;
+        // Tooltip will show Meta[TooltipMetaKey] if present
+        String TooltipMetaKey;
+    }
+
+    [default_interface]  // Force the generation of the activation factory interface, otherwise it cannot be used.
+    runtimeclass EdgeViewModel : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        EdgeViewModel();
+        
+        Int64 FromId;
+        Int64 ToId;
+        String Label;
+        Boolean IsDirected;
+        Double Weight;
+    }
+
+    // A lightweight event args to bubble node invocation
+    [default_interface]  // Force the generation of the activation factory interface, otherwise it cannot be used.
+    runtimeclass NodeInvokedEventArgs
+    {
+        NodeInvokedEventArgs();
+        NodeViewModel Node;
+    }
+
+    delegate void NodeInvokedEventHandler(Object sender, NodeInvokedEventArgs args);
+
+    [default_interface]
+    runtimeclass NodeGraphPanel : Microsoft.UI.Xaml.Controls.Control
+    {
+        NodeGraphPanel();
+
+        // Data sources
+        Windows.Foundation.Collections.IObservableVector<NodeViewModel> Nodes;
+        Windows.Foundation.Collections.IObservableVector<EdgeViewModel> Edges;
+
+        // Selection & defaults
+        NodeViewModel SelectedNode;
+        NodeShape DefaultNodeShape;
+        String DefaultTooltipMetaKey;
+        String DefaultLabelMetaKey;
+
+        // Public API for unified CRUD
+        NodeViewModel AddNode(Int64 id, String label, Windows.Foundation.Point position);
+        void RemoveNode(Int64 id);
+        NodeViewModel GetNode(Int64 id);
+        void AddOrUpdateMeta(Int64 id, String key, Object value);
+        void RemoveMeta(Int64 id, String key);
+
+        EdgeViewModel AddEdge(Int64 fromId, Int64 toId, String label);
+        void RemoveEdge(Int64 fromId, Int64 toId);
+
+        // Events
+        event NodeInvokedEventHandler NodeInvoked;
+
+        // Appearance
+        Microsoft.UI.Xaml.Media.Brush NodeFill;          // 节点填充
+        Microsoft.UI.Xaml.Media.Brush NodeStroke;        // 节点描边
+        Microsoft.UI.Xaml.Media.Brush NodeTextBrush;     // 标签前景
+        Microsoft.UI.Xaml.Media.Brush EdgeBrush;         // 连线颜色
+        Double EdgeThickness;                             // 连线粗细，默认 2.5
+        Double NodeCornerRadius;                          // 圆角矩形半径，默认 10
+        Boolean AutoContrast;                             // 自动对比度（默认 true）
+        Double ContrastThreshold;                         // 对比度阈值（默认 4.5）
+
+        // 把每个 DP 的静态字段暴露给 XAML
+        static Microsoft.UI.Xaml.DependencyProperty NodeFillProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty NodeStrokeProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty NodeTextBrushProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty EdgeBrushProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty EdgeThicknessProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty NodeCornerRadiusProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty AutoContrastProperty{ get; };
+        static Microsoft.UI.Xaml.DependencyProperty ContrastThresholdProperty{ get; };
+    }
+}

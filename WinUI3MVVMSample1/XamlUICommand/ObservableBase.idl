@@ -1,0 +1,170 @@
+namespace XamlUICommand
+{
+    interface IObserver
+    {
+        void OnNext(Object value);
+        void OnError(Object error);
+        void OnCompleted();
+    }
+
+    interface IObservable
+    {
+        void Subscribe(XamlUICommand.IObserver observer);
+    }
+
+    // 可观察属性的基础接口
+    interface IObservableProperty
+    {
+        Object Value;
+        event Windows.Foundation.TypedEventHandler<IObservableProperty, Object> ValueChanged;
+    }
+}
+
+namespace Mvvm.Framework.Core
+{
+    interface IObservablePropertyBase : IInspectable
+    {
+        Boolean IsObservable();
+    }
+
+    // Boolean -> Classic IDL: boolean
+    [bindable]
+    unsealed
+    runtimeclass ObservableBoolean : IObservablePropertyBase
+    {
+        ObservableBoolean();
+        ObservableBoolean(Boolean inValue);
+        Boolean Value;
+    }
+
+    // UInt8 -> Classic IDL: byte
+    [bindable]
+    unsealed
+    runtimeclass ObservableByte : IObservablePropertyBase
+    {
+        ObservableByte();
+        ObservableByte(UInt8 inValue);
+        UInt8 Value;
+    }
+
+    // int8 / signed char -> Classic IDL: char
+    [bindable]
+    unsealed
+    runtimeclass ObservableInt8 : IObservablePropertyBase
+    {
+        ObservableInt8();
+        // Use unsigned integers when storing, but use signed integers when reading. (MIDL 3.0 does not have a single-byte char type)
+        ObservableInt8(UInt8 inValue);
+        UInt8 RawValue;
+        Int32 SignedValue { get; };   // This is the signed value of the byte, which is used for Binding operations
+    }
+
+    // Int16 -> Classic IDL: short
+    [bindable]
+    unsealed
+    runtimeclass ObservableInt16 : IObservablePropertyBase
+    {
+        ObservableInt16();
+        ObservableInt16(Int16 inValue);
+        Int16 Value;
+    }
+
+    // UInt16 -> Classic IDL: unsigned short
+    [bindable]
+    unsealed
+    runtimeclass ObservableUInt16 : IObservablePropertyBase
+    {
+        ObservableUInt16();
+        ObservableUInt16(UInt16 inValue);
+        UInt16 Value;
+    }
+
+    // Int32 -> Classic IDL: long
+    [bindable]
+    unsealed
+    runtimeclass ObservableInt32 : IObservablePropertyBase
+    {
+        ObservableInt32();
+        ObservableInt32(Int32 inValue);
+        Int32 Value;
+    }
+
+    // UInt32 -> Classic IDL: unsigned long
+    [bindable]
+    unsealed
+    runtimeclass ObservableUInt32 : IObservablePropertyBase
+    {
+        ObservableUInt32();
+        ObservableUInt32(UInt32 inValue);
+        UInt32 Value;
+    }
+
+    // Int64 -> Classic IDL: hyper
+    [bindable]
+    unsealed
+    runtimeclass ObservableInt64 : IObservablePropertyBase
+    {
+        ObservableInt64();
+        ObservableInt64(Int64 inValue);
+        Int64 Value;
+    }
+
+    // UInt64 -> Classic IDL: unsigned hyper
+    [bindable]
+    unsealed
+    runtimeclass ObservableUInt64 : IObservablePropertyBase
+    {
+        ObservableUInt64();
+        ObservableUInt64(UInt64 inValue);
+        UInt64 Value;
+    }
+
+    // Single -> Classic IDL: float
+    [bindable]
+    unsealed
+    runtimeclass ObservableSingle : IObservablePropertyBase
+    {
+        ObservableSingle();
+        ObservableSingle(Single inValue);
+        Single Value;
+    }
+
+    // Double -> Classic IDL: double
+    [bindable]
+    unsealed
+    runtimeclass ObservableDouble : IObservablePropertyBase
+    {
+        ObservableDouble();
+        ObservableDouble(Double inValue);
+        Double Value;
+    }
+
+    // Char16 -> Classic IDL: wchar_t
+    // You could open the Property tab > Properties > Configuration Properties > C/C++ > Language,
+    // find Treat Wchar_t As Built in Type property and select the No(/Zc:wchar_t-) option.
+    // Then, try to rebuild your project.
+    // Otherwise, cppwinrt will mix char16_t and wchar_t types in code generation, 
+    // causing compilation errors(T must be a WinRT type). This is a known issue.
+    // In addition, CppWinRT recognizes `Char16` as a built-in type, but MIDLRT does not recognize it, so it cannot be used.
+    // Ref: https://stackoverflow.com/questions/64654041/c-winrt-midl-3-0-type-char-compile-of-generated-code-returns-t-must-be-wi
+    // Ref: https://github.com/microsoft/cppwinrt/blob/4c9e03fe1e3d7cbfbf742ec237e9af5b30add68a/strings/base_reference_produce.h#L63
+    // Ref: https://github.com/microsoft/cppwinrt/blob/4c9e03fe1e3d7cbfbf742ec237e9af5b30add68a/strings/base_identity.h#L573
+    [bindable]
+    unsealed runtimeclass ObservableChar16 : IObservablePropertyBase
+    {
+        ObservableChar16();
+        ObservableChar16(Char inValue);
+        Char Value;
+    }
+
+    // String -> Classic IDL: HSTRING
+    [bindable]
+    unsealed
+    runtimeclass ObservableString : IObservablePropertyBase
+    {
+        ObservableString();
+        ObservableString(String inValue);
+        String Value;
+    }
+}
+

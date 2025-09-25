@@ -1,0 +1,14 @@
+import "ViewModel/MyEntityViewModel.idl";
+
+namespace WinUI3MVVMSample1.View
+{
+    [default_interface]
+    runtimeclass MyEntityView
+        : Microsoft.UI.Xaml.Controls.UserControl
+        //, Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        MyEntityView();
+        MyEntityView(WinUI3MVVMSample1.MyEntityViewModel viewModel);
+        WinUI3MVVMSample1.MyEntityViewModel MainViewModel{ get; };
+    }
+}

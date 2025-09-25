@@ -1,0 +1,11 @@
+namespace XamlUICommand
+{
+    [bindable]
+    [default_interface]
+    runtimeclass FlyoutAcrylicBackdropHelper : Microsoft.UI.Xaml.Controls.Control
+    {
+        static Microsoft.UI.Xaml.DependencyProperty HostBackdropAcrylicProperty { get; };
+        static Boolean GetHostBackdropAcrylicState(Microsoft.UI.Xaml.Controls.Flyout flyout);
+        static void SetHostBackdropAcrylicState(Microsoft.UI.Xaml.Controls.Flyout flyout, Boolean value);
+    }
+}

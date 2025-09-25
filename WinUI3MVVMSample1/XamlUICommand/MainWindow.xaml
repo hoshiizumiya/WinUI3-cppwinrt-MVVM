@@ -1,0 +1,29 @@
+<Window
+    x:Class="XamlUICommand.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:local="using:XamlUICommand"
+    Title="Demo - NodeGraphPanel" >
+
+    <muxc:NavigationView x:Name="Nav"
+                         IsSettingsVisible="False"
+                         IsBackButtonVisible="Collapsed"
+                         SelectionChanged="Nav_SelectionChanged">
+        <muxc:NavigationView.MenuItems>
+            <muxc:NavigationViewItem Content="Home" Tag="home">
+                <muxc:NavigationViewItem.Icon>
+                    <SymbolIcon Symbol="Home"/>
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+            <muxc:NavigationViewItem Content="Node Graph" Tag="graph">
+                <muxc:NavigationViewItem.Icon>
+                    <SymbolIcon Symbol="Library"/>
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+        </muxc:NavigationView.MenuItems>
+
+        <!-- 主内容区域 -->
+        <Frame x:Name="RootFrame"/>
+    </muxc:NavigationView>
+</Window>

@@ -1,0 +1,11 @@
+namespace XamlUICommand
+{
+    [default_interface]
+    runtimeclass MainPage : 
+        Microsoft.UI.Xaml.Controls.Page, 
+        Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        MainPage();
+        String RectangleColor;
+    }
+}

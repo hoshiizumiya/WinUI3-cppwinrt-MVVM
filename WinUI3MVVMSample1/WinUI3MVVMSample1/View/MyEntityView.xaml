@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="WinUI3MVVMSample1.View.MyEntityView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUI3MVVMSample1"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
+        <TextBlock Text="标准属性 (MyProperty)" FontWeight="Bold" Margin="0,0,0,5"/>
+        <Button Click="{x:Bind MainViewModel.IncrementProperty}" Content="增加属性值" Margin="0,5"/>
+        <TextBlock Text="{x:Bind MainViewModel.MyProperty, Mode=OneWay}" 
+                    HorizontalAlignment="Center" 
+                    FontSize="20" Margin="0,5"/>
+
+        <!-- Reset 按钮，绑定命令 -->
+        <Button Content="重置属性" 
+                Command="{x:Bind MainViewModel.ResetCommand}" 
+                Margin="0,5"/>
+    </StackPanel>
+</UserControl>

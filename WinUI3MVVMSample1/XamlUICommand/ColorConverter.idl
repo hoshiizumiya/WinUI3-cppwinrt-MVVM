@@ -1,0 +1,8 @@
+namespace XamlUICommand
+{
+    [default_interface]
+    runtimeclass ColorConverter : [default] Microsoft.UI.Xaml.Data.IValueConverter
+    {
+        ColorConverter();
+    }
+}
