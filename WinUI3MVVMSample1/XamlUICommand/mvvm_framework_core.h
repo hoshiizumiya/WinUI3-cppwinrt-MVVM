@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef MVVM_FRAMEWORK_CORE_H
 #define MVVM_FRAMEWORK_CORE_H
 
@@ -39,10 +39,10 @@ namespace winrt::Mvvm::Framework::Core::implementation
 
     struct ObservableBoolean : ObservableBooleanT<ObservableBoolean>, ObservableBaseT<bool>
     {
-        // �� C++11 �У������˹��캯���̳е����ԣ�����������ͨ���򵥵��������̳л���Ĺ��캯����
-        // ��һ������Ҫ������ڼ̳���ϵ�У���������Ҫ��ʽ���û��๹�캯������ɳ�ʼ�������⡣
-        // ������ӵ�ж�����캯��ʱ�������಻����ҪΪÿ�����๹�캯����д��Ӧ�ġ�͸�������캯����
-        // �Ӷ����ٴ����ظ�����ߴ���������ȺͿ�ά���ԡ�
+        // 在 C++11 中，引入了构造函数继承的特性，允许派生类通过简单的声明来继承基类的构造函数。
+        // 这一特性主要解决了在继承体系中，派生类需要显式调用基类构造函数以完成初始化的问题。
+        // 当基类拥有多个构造函数时，派生类不再需要为每个基类构造函数编写对应的“透传”构造函数，
+        // 从而减少代码重复，提高代码的清晰度和可维护性。
         using ObservableBaseT::ObservableBaseT;
     };
 

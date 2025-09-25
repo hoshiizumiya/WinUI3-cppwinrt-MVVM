@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "NodeGraphPage.xaml.h"
 #if __has_include("NodeGraphPage.g.cpp")
 #include "NodeGraphPage.g.cpp"
@@ -61,37 +61,37 @@ namespace winrt::XamlUICommand::implementation
                 node.IsSelected(true);
             });
 
-        // ³õÊ¼ÊÊÅäÊÓ¿Ú
+        // åˆå§‹é€‚é…è§†å£
         OnResetViewClick(nullptr, nullptr);
     }
 
-    // ¡ª¡ª ½»»¥£ºÖØÖÃÊÓÍ¼£¨Ëõ·ÅÒÔÊÊÅäÑİÊ¾¿¨Æ¬£© ¡ª¡ª
+    // â€”â€” äº¤äº’ï¼šé‡ç½®è§†å›¾ï¼ˆç¼©æ”¾ä»¥é€‚é…æ¼”ç¤ºå¡ç‰‡ï¼‰ â€”â€”
     void NodeGraphPage::OnResetViewClick(IInspectable const&, Microsoft::UI::Xaml::RoutedEventArgs const&)
     {
         double vw = Zoomer().ViewportWidth();
         double vh = Zoomer().ViewportHeight();
-        double cw = Graph().Width();   // »ò ActualWidth()
+        double cw = Graph().Width();   // æˆ– ActualWidth()
         double ch = Graph().Height();
         if (vw <= 0 || vh <= 0 || cw <= 0 || ch <= 0) return;
 
         double target = std::min(vw / cw, vh / ch);
         target = std::clamp(target, Zoomer().MinZoomFactor(), Zoomer().MaxZoomFactor());
 
-        // ²»Ö¸¶¨ÖĞĞÄµã ¡ú ´«¿Õ IReference<float2>
+        // ä¸æŒ‡å®šä¸­å¿ƒç‚¹ â†’ ä¼ ç©º IReference<float2>
         winrt::Windows::Foundation::IReference<float2> center = nullptr;
 
         using namespace Microsoft::UI::Xaml::Controls;
         ScrollingZoomOptions opt{ ScrollingAnimationMode::Enabled, ScrollingSnapPointsMode::Ignore };
 
-        Zoomer().ZoomTo(target, center, opt);  // ·µ»Ø correlationId£¬¿ÉÓÃÓÚÊÂ¼şÆ¥Åä
+        Zoomer().ZoomTo(target, center, opt);  // è¿”å› correlationIdï¼Œå¯ç”¨äºäº‹ä»¶åŒ¹é…
     }
 
-    // ¡ª¡ª ½»»¥£ºË«»÷ÇĞ»» 1x/2x£¬ÖĞĞÄÎªË«»÷µã ¡ª¡ª
+    // â€”â€” äº¤äº’ï¼šåŒå‡»åˆ‡æ¢ 1x/2xï¼Œä¸­å¿ƒä¸ºåŒå‡»ç‚¹ â€”â€”
     void NodeGraphPage::OnGraphDoubleTapped(IInspectable const&, Microsoft::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
     {
         float target = (Zoomer().ZoomFactor() < 1.5f) ? 2.0f : 1.0f;
 
-        auto p = e.GetPosition(Graph()); // Ïà¶ÔÄÚÈİÔªËØµÄÎ»ÖÃ
+        auto p = e.GetPosition(Graph()); // ç›¸å¯¹å†…å®¹å…ƒç´ çš„ä½ç½®
         auto cp = winrt::box_value(float2{ (float)p.X, (float)p.Y })
             .as<winrt::Windows::Foundation::IReference<float2>>(); // IReference<float2>
         using namespace Microsoft::UI::Xaml::Controls;
@@ -100,10 +100,10 @@ namespace winrt::XamlUICommand::implementation
         Zoomer().ZoomTo(target, cp, opt);
     }
 
-    // ¡ª¡ª Ê¾Àı£ºËæ»úÈÅ¶¯²¼¾Ö£¨ÓÃÓÚÑİÊ¾¿ÉÊÓ±ä»¯£© ¡ª¡ª
+    // â€”â€” ç¤ºä¾‹ï¼šéšæœºæ‰°åŠ¨å¸ƒå±€ï¼ˆç”¨äºæ¼”ç¤ºå¯è§†å˜åŒ–ï¼‰ â€”â€”
     void NodeGraphPage::OnRandomizeClick(IInspectable const&, RoutedEventArgs const&)
     {
-        // ¼òµ¥Ëæ»ú£º°ÑÏÖÓĞ½ÚµãÎ»ÖÃ´òÉ¢
+        // ç®€å•éšæœºï¼šæŠŠç°æœ‰èŠ‚ç‚¹ä½ç½®æ‰“æ•£
         std::mt19937 rng{ std::random_device{}() };
         std::uniform_real_distribution<float> dx(60.f, (float)Graph().Width() - 120.f);
         std::uniform_real_distribution<float> dy(60.f, (float)Graph().Height() - 120.f);

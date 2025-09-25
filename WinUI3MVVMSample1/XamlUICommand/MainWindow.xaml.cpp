@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "MainWindow.xaml.h"
 #if __has_include("MainWindow.g.cpp")
 #include "MainWindow.g.cpp"
@@ -17,7 +17,7 @@ namespace winrt::XamlUICommand::implementation
     {
         InitializeComponent();
 
-        // Ä¬ÈÏ½øµ½ Home
+        // é»˜è®¤è¿›åˆ° Home
         if (auto items = Nav().MenuItems(); items && items.Size() > 0)
         {
             Nav().SelectedItem(items.GetAt(0));

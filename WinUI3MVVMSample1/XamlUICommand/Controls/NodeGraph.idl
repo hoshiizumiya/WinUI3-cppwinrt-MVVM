@@ -1,4 +1,4 @@
-namespace XamlUICommand
+ï»¿namespace XamlUICommand
 {
     enum NodeShape
     {
@@ -78,16 +78,16 @@ namespace XamlUICommand
         event NodeInvokedEventHandler NodeInvoked;
 
         // Appearance
-        Microsoft.UI.Xaml.Media.Brush NodeFill;          // ½ÚµãÌî³ä
-        Microsoft.UI.Xaml.Media.Brush NodeStroke;        // ½ÚµãÃè±ß
-        Microsoft.UI.Xaml.Media.Brush NodeTextBrush;     // ±êÇ©Ç°¾°
-        Microsoft.UI.Xaml.Media.Brush EdgeBrush;         // Á¬ÏßÑÕÉ«
-        Double EdgeThickness;                             // Á¬Ïß´ÖÏ¸£¬Ä¬ÈÏ 2.5
-        Double NodeCornerRadius;                          // Ô²½Ç¾ØĞÎ°ë¾¶£¬Ä¬ÈÏ 10
-        Boolean AutoContrast;                             // ×Ô¶¯¶Ô±È¶È£¨Ä¬ÈÏ true£©
-        Double ContrastThreshold;                         // ¶Ô±È¶ÈãĞÖµ£¨Ä¬ÈÏ 4.5£©
+        Microsoft.UI.Xaml.Media.Brush NodeFill;          // èŠ‚ç‚¹å¡«å……
+        Microsoft.UI.Xaml.Media.Brush NodeStroke;        // èŠ‚ç‚¹æè¾¹
+        Microsoft.UI.Xaml.Media.Brush NodeTextBrush;     // æ ‡ç­¾å‰æ™¯
+        Microsoft.UI.Xaml.Media.Brush EdgeBrush;         // è¿çº¿é¢œè‰²
+        Double EdgeThickness;                             // è¿çº¿ç²—ç»†ï¼Œé»˜è®¤ 2.5
+        Double NodeCornerRadius;                          // åœ†è§’çŸ©å½¢åŠå¾„ï¼Œé»˜è®¤ 10
+        Boolean AutoContrast;                             // è‡ªåŠ¨å¯¹æ¯”åº¦ï¼ˆé»˜è®¤ trueï¼‰
+        Double ContrastThreshold;                         // å¯¹æ¯”åº¦é˜ˆå€¼ï¼ˆé»˜è®¤ 4.5ï¼‰
 
-        // °ÑÃ¿¸ö DP µÄ¾²Ì¬×Ö¶Î±©Â¶¸ø XAML
+        // æŠŠæ¯ä¸ª DP çš„é™æ€å­—æ®µæš´éœ²ç»™ XAML
         static Microsoft.UI.Xaml.DependencyProperty NodeFillProperty{ get; };
         static Microsoft.UI.Xaml.DependencyProperty NodeStrokeProperty{ get; };
         static Microsoft.UI.Xaml.DependencyProperty NodeTextBrushProperty{ get; };

@@ -1,8 +1,8 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "WindowHookManager.h"
 #include <winternl.h>
 
-// ¾²Ì¬³ÉÔ±³õÊ¼»¯
+// é™æ€æˆå‘˜åˆå§‹åŒ–
 WindowHookManager::WindowEventCallback WindowHookManager::s_windowCallback;
 WindowHookManager::ErrorCallback WindowHookManager::s_errorCallback;
 std::mutex WindowHookManager::s_dataMutex;
@@ -21,10 +21,10 @@ void WindowHookManager::Initialize(WindowEventCallback windowCallback, ErrorCall
     s_windowCallback = windowCallback;
     s_errorCallback = errorCallback;
 
-    // °²×°Ö÷Ïß³Ì¹³×Ó
+    // å®‰è£…ä¸»çº¿ç¨‹é’©å­
     InstallMainThreadHook();
 
-    // ¹Ò¹³Ïß³Ì´´½¨º¯Êı
+    // æŒ‚é’©çº¿ç¨‹åˆ›å»ºå‡½æ•°
     HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
     if (!ntdll) {
         LogError(L"Failed to get ntdll module handle");
@@ -53,7 +53,7 @@ void WindowHookManager::Initialize(WindowEventCallback windowCallback, ErrorCall
 }
 
 void WindowHookManager::Shutdown() {
-    // Ğ¶ÔØDetour¹³×Ó
+    // å¸è½½Detouré’©å­
     if (s_originalRtlUserThreadStart) {
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
@@ -61,13 +61,13 @@ void WindowHookManager::Shutdown() {
         DetourTransactionCommit();
     }
 
-    // Ğ¶ÔØÖ÷Ïß³Ì¹³×Ó
+    // å¸è½½ä¸»çº¿ç¨‹é’©å­
     if (s_mainThreadHook) {
         UnhookWindowsHookEx(s_mainThreadHook);
         s_mainThreadHook = nullptr;
     }
 
-    // Ğ¶ÔØËùÓĞÏß³Ì¹³×Ó
+    // å¸è½½æ‰€æœ‰çº¿ç¨‹é’©å­
     std::lock_guard<std::mutex> lock(s_dataMutex);
     for (auto& pair : s_threadHooks) {
         if (pair.second) {
@@ -103,7 +103,7 @@ void WindowHookManager::InstallMainThreadHook() {
 void WindowHookManager::InstallThreadHook() {
     DWORD threadId = GetCurrentThreadId();
 
-    // ¼ì²éÊÇ·ñÒÑ°²×°¹³×Ó
+    // æ£€æŸ¥æ˜¯å¦å·²å®‰è£…é’©å­
     {
         std::lock_guard<std::mutex> lock(s_dataMutex);
         if (s_threadHooks.find(threadId) != s_threadHooks.end()) {
@@ -140,10 +140,10 @@ void WindowHookManager::InstallThreadHook() {
 }
 
 void NTAPI WindowHookManager::HookedRtlUserThreadStart(PTHREAD_START_ROUTINE startAddr, PVOID arg) {
-    // ÔÚĞÂÏß³ÌÖĞ°²×°¹³×Ó
+    // åœ¨æ–°çº¿ç¨‹ä¸­å®‰è£…é’©å­
     GetInstance().InstallThreadHook();
 
-    // µ÷ÓÃÔ­Ê¼Ïß³Ìº¯Êı
+    // è°ƒç”¨åŸå§‹çº¿ç¨‹å‡½æ•°
     s_originalRtlUserThreadStart(startAddr, arg);
 }
 
@@ -157,7 +157,7 @@ LRESULT CALLBACK WindowHookManager::CBTProc(int code, WPARAM wParam, LPARAM lPar
 
     switch (code) {
     case HCBT_CREATEWND: {
-        // ÔÚ´°¿Ú´´½¨Íê³ÉÇ°²¶»ñĞÅÏ¢
+        // åœ¨çª—å£åˆ›å»ºå®Œæˆå‰æ•è·ä¿¡æ¯
         instance.TrackWindow(hwnd, true);
         break;
     }
@@ -215,7 +215,7 @@ WindowHookManager::WindowInfo WindowHookManager::CaptureWindowInfo(HWND hwnd) co
         }
     }
     else if (titleLen == 0) {
-        // ¿Õ±êÌâÊÇºÏ·¨µÄ
+        // ç©ºæ ‡é¢˜æ˜¯åˆæ³•çš„
     }
     else {
         info.titleError = true;
@@ -248,7 +248,7 @@ void WindowHookManager::UpdateWindowInfo(HWND hwnd) {
     }
 
     if (updated && s_windowCallback) {
-        s_windowCallback(newInfo, false); // false ±íÊ¾¸üĞÂ¶ø·Ç´´½¨
+        s_windowCallback(newInfo, false); // false è¡¨ç¤ºæ›´æ–°è€Œéåˆ›å»º
     }
 }
 
@@ -257,16 +257,16 @@ void WindowHookManager::TrackWindow(HWND hwnd, bool created) {
 
     WindowInfo info = CaptureWindowInfo(hwnd);
 
-    // ¸üĞÂ»º´æ
+    // æ›´æ–°ç¼“å­˜
     {
         std::lock_guard<std::mutex> lock(s_dataMutex);
         auto it = s_trackedWindows.find(hwnd);
         if (it != s_trackedWindows.end()) {
-            // ¸üĞÂÏÖÓĞ¼ÇÂ¼
+            // æ›´æ–°ç°æœ‰è®°å½•
             it->second = info;
         }
         else {
-            // ĞÂ½¨¼ÇÂ¼
+            // æ–°å»ºè®°å½•
             s_trackedWindows[hwnd] = info;
         }
     }

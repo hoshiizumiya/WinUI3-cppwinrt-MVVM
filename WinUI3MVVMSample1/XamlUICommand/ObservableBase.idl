@@ -1,4 +1,4 @@
-namespace XamlUICommand
+锘縩amespace XamlUICommand
 {
     interface IObserver
     {
@@ -12,7 +12,7 @@ namespace XamlUICommand
         void Subscribe(XamlUICommand.IObserver observer);
     }
 
-    // 可观察属性的基础接口
+    // 鍙瀵熷睘鎬х殑鍩虹鎺ュ彛
     interface IObservableProperty
     {
         Object Value;

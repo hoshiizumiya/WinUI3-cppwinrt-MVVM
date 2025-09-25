@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "MainPage.xaml.h"
 #if __has_include("MainPage.g.cpp")
 #include "MainPage.g.cpp"
@@ -8,7 +8,7 @@
 #include <winrt/Microsoft.UI.Xaml.Media.Animation.h>
 #include <ColorHelperUtil.h>
 #include "mvvm_framework_core.h"
-#include <chrono> // ÓÃÓÚ std::chrono::milliseconds
+#include <chrono> // ç”¨äº std::chrono::milliseconds
 
 using namespace winrt;
 namespace wui = winrt::Windows::UI;
@@ -72,10 +72,10 @@ namespace winrt::XamlUICommand::implementation
 
         //////////////////////////////////////////////////////
 
-        // ÔÚ²¼¾ÖÍê³Éºó³õÊ¼»¯¾ØĞÎÎ»ÖÃ
+        // åœ¨å¸ƒå±€å®Œæˆååˆå§‹åŒ–çŸ©å½¢ä½ç½®
         CanvasMovableRect().LayoutUpdated([this](auto const&, auto const&)
             {
-                // ·ÀÖ¹¶à´Î´¥·¢
+                // é˜²æ­¢å¤šæ¬¡è§¦å‘
                 static bool initialized = false;
                 if (initialized) return;
                 initialized = true;
@@ -86,7 +86,7 @@ namespace winrt::XamlUICommand::implementation
                 muxc::Canvas::SetLeft(MovableRect(), centerX);
                 muxc::Canvas::SetTop(MovableRect(), centerY);
 
-                // Í¨Öª°´Å¥×´Ì¬¸üĞÂ
+                // é€šçŸ¥æŒ‰é’®çŠ¶æ€æ›´æ–°
                 m_moveLeftCmd.NotifyCanExecuteChanged();
                 m_moveRightCmd.NotifyCanExecuteChanged();
             });
@@ -99,7 +99,7 @@ namespace winrt::XamlUICommand::implementation
         muxc::SymbolIconSource iconRight;
         iconRight.Symbol(muxc::Symbol::AlignRight);
 
-        // ´´½¨ Left ÃüÁî
+        // åˆ›å»º Left å‘½ä»¤
         m_moveLeftCmd = muxi::XamlUICommand();
         m_moveLeftCmd.Label(L"Move Left");
         m_moveLeftCmd.Description(L"Move rectangle to the left");
@@ -112,7 +112,7 @@ namespace winrt::XamlUICommand::implementation
         leftAccel.Modifiers(Windows::System::VirtualKeyModifiers::Control);
         m_moveLeftCmd.KeyboardAccelerators().Append(leftAccel);
 
-        // ´´½¨ Right ÃüÁî
+        // åˆ›å»º Right å‘½ä»¤
         m_moveRightCmd = muxi::XamlUICommand();
         m_moveRightCmd.Label(L"Move Right");
         m_moveRightCmd.Description(L"Move rectangle to the right");
@@ -125,7 +125,7 @@ namespace winrt::XamlUICommand::implementation
         rightAccel.Modifiers(Windows::System::VirtualKeyModifiers::Control);
         m_moveRightCmd.KeyboardAccelerators().Append(rightAccel);
 
-        // Ìî³äÑÕÉ«ÃüÁî
+        // å¡«å……é¢œè‰²å‘½ä»¤
         m_fillColor1Cmd = muxi::XamlUICommand();
         m_fillColor1Cmd.Label(L"Fuchsia");
         m_fillColor1Cmd.ExecuteRequested([this](auto&, auto&) {
@@ -147,7 +147,7 @@ namespace winrt::XamlUICommand::implementation
             RectangleColor(ColorHelperUtil::ToString(wui::Colors::CornflowerBlue()));
             });
 
-        // ÏÔÊ¾/Òş²ØÃüÁî
+        // æ˜¾ç¤º/éšè—å‘½ä»¤
         m_toggleVisibilityCmd = muxi::XamlUICommand();
         m_toggleVisibilityCmd.Label(L"Show/Hide");
         m_toggleVisibilityCmd.ExecuteRequested([this](auto&, auto&) {
@@ -157,11 +157,11 @@ namespace winrt::XamlUICommand::implementation
             );
             });
 
-        // °ó¶¨°´Å¥ÃüÁî
+        // ç»‘å®šæŒ‰é’®å‘½ä»¤
         BtnLeft().Command(m_moveLeftCmd);
         BtnRight().Command(m_moveRightCmd);
 
-        // ²Ëµ¥ÏîºÍµ×²¿²Ëµ¥°ó¶¨
+        // èœå•é¡¹å’Œåº•éƒ¨èœå•ç»‘å®š
         MenuFillRed().Command(m_fillColor1Cmd);
         MenuFillGreen().Command(m_fillColor2Cmd);
         MenuFillBlue().Command(m_fillColor3Cmd);
@@ -249,23 +249,23 @@ namespace winrt::XamlUICommand::implementation
 
         bool showFromRight = rectLeft < (canvasWidth / 3);
 
-        // ÉèÖÃ¶ÔÆëºÍ³õÊ¼Î»ÖÃ
+        // è®¾ç½®å¯¹é½å’Œåˆå§‹ä½ç½®
         if (showFromRight)
         {
             ColorPickerPanel().HorizontalAlignment(mux::HorizontalAlignment::Right);
-            ColorPickerTransform().X(250); // ´ÓÓÒ»¬Èë
+            ColorPickerTransform().X(250); // ä»å³æ»‘å…¥
         }
         else
         {
             ColorPickerPanel().HorizontalAlignment(mux::HorizontalAlignment::Left);
-            ColorPickerTransform().X(-250); // ´Ó×ó»¬Èë
+            ColorPickerTransform().X(-250); // ä»å·¦æ»‘å…¥
         }
 
         ColorPickerPanel().Visibility(mux::Visibility::Visible);
 
-        // ¶¯»­
+        // åŠ¨ç”»
         auto sb = mux::Media::Animation::Storyboard();
-        wf::TimeSpan duration{ MillisecondsToTimeSpan(1) }; // FIXME: ¶¯»­Ê±³¤ËÆºõ²»´ÕĞ§£¬Ä¿Ç°Í¨¹ıËÙÂÊ SpeedRatio µ÷Õû
+        wf::TimeSpan duration{ MillisecondsToTimeSpan(1) }; // FIXME: åŠ¨ç”»æ—¶é•¿ä¼¼ä¹ä¸å‡‘æ•ˆï¼Œç›®å‰é€šè¿‡é€Ÿç‡ SpeedRatio è°ƒæ•´
 
         auto slideAnim = mux::Media::Animation::DoubleAnimation();
         slideAnim.To(0.0);
@@ -314,7 +314,7 @@ namespace winrt::XamlUICommand::implementation
         sb.Children().Append(slideAnim);
         sb.Children().Append(fadeAnim);
 
-        // ¶¯»­Íê³ÉºóÒş²Ø
+        // åŠ¨ç”»å®Œæˆåéšè—
         sb.Completed([this](auto const&, auto const&)
             {
                 ColorPickerPanel().Visibility(mux::Visibility::Collapsed);

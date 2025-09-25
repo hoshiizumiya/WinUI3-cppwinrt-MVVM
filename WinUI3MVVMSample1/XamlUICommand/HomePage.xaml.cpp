@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "HomePage.xaml.h"
 #if __has_include("HomePage.g.cpp")
 #include "HomePage.g.cpp"
@@ -12,7 +12,7 @@ namespace winrt::XamlUICommand::implementation
 {
     void HomePage::OpenGraph_Click(IInspectable const&, RoutedEventArgs const&)
     {
-        if (auto f = Frame()) // Page �Դ� Frame()
+        if (auto f = Frame()) // Page 自带 Frame()
         {
             f.Navigate(xaml_typename<XamlUICommand::NodeGraphPage>());
         }

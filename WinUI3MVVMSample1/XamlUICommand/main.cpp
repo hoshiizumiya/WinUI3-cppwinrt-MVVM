@@ -1,22 +1,22 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "App.xaml.h"
 #include "WindowHookManager.h"
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
-    // ÆôÓÃµ÷ÊÔÊä³ö
+    // å¯ç”¨è°ƒè¯•è¾“å‡º
     WindowHookManager::GetInstance().EnableDebugOutput(true);
 
-    // ³õÊ¼»¯´°¿Ú¹³×Ó¹ÜÀíÆ÷
+    // åˆå§‹åŒ–çª—å£é’©å­ç®¡ç†å™¨
     WindowHookManager::GetInstance().Initialize(
         [](const WindowHookManager::WindowInfo& info, bool created) {
-            // ´°¿ÚÊÂ¼ş´¦Àí
+            // çª—å£äº‹ä»¶å¤„ç†
             std::wstring eventType = created ? L"Created" : L"Destroyed";
             std::wstring msg = eventType + L": " + info.className;
             OutputDebugStringW(msg.c_str());
         },
         [](const std::wstring& error) {
-            // ´íÎó´¦Àí
+            // é”™è¯¯å¤„ç†
             OutputDebugStringW((L"WindowHook Error: " + error).c_str());
         }
     );

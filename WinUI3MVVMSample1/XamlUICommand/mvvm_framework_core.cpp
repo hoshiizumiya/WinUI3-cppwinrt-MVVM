@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "mvvm_framework_core.h"
 
 #if __has_include("Mvvm/Framework/Core/ObservableBoolean.g.cpp")
@@ -55,5 +55,5 @@
 
 namespace winrt::Mvvm::Framework::Core::implementation
 {
-    // Ä£°å»ùÀàÒÑÔÚÍ·ÎÄ¼şÖĞÊµÏÖ£¬ÕâÀï²»ĞèÒª¶îÍâ·½·¨ÊµÏÖ
+    // æ¨¡æ¿åŸºç±»å·²åœ¨å¤´æ–‡ä»¶ä¸­å®ç°ï¼Œè¿™é‡Œä¸éœ€è¦é¢å¤–æ–¹æ³•å®ç°
 }

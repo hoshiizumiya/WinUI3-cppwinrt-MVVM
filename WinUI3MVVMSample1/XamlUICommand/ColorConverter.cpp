@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "ColorConverter.h"
 #if __has_include("ColorConverter.g.cpp")
 #include "ColorConverter.g.cpp"
@@ -32,7 +32,7 @@ namespace winrt::XamlUICommand::implementation
         {
             auto color = ColorHelperUtil::FromString(str.value());
 
-            if (targetType == xaml_typename<wui::Color>())  // ÀàĞÍ¼ì²é£¬L"Windows.UI.Color"
+            if (targetType == xaml_typename<wui::Color>())  // ç±»å‹æ£€æŸ¥ï¼ŒL"Windows.UI.Color"
             {
                 return winrt::box_value(color);
             }
@@ -42,7 +42,7 @@ namespace winrt::XamlUICommand::implementation
             }
         }
 
-        // Ä¬ÈÏÍ¸Ã÷
+        // é»˜è®¤é€æ˜
         if (targetType.Name == L"Windows.UI.Color")
         {
             return winrt::box_value(wui::Colors::Transparent());

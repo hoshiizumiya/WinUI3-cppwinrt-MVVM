@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 
 #include "EdgeViewModel.h"
 #include "NodeGraphPanel.h"
@@ -29,7 +29,7 @@ namespace winrt::XamlUICommand::implementation
     // Helper functions, use macros to avoid polluting global namespace and avoid redefinition errors.
 #ifndef NODEGRAPHPANEL_HELPERS_API
 #define NODEGRAPHPANEL_HELPERS_API
-    // Ïà¶ÔÁÁ¶È & ¶Ô±È¶È£¨WCAG£©
+    // ç›¸å¯¹äº®åº¦ & å¯¹æ¯”åº¦ï¼ˆWCAGï¼‰
     static double Luminance(Windows::UI::Color c)
     {
         auto toLin = [](double u)
@@ -103,7 +103,7 @@ namespace winrt::XamlUICommand::implementation
             PropertyMetadata{ winrt::box_value(4.5), PropertyChangedCallback{ &NodeGraphPanel::OnAppearanceChanged } });
 
 
-    // ×¢²á£¨±£³ÖÄãÔ­ÓĞµÄ Register ´úÂë£¬µ«¸ÄÓÃ s_ Ç°×º£©
+    // æ³¨å†Œï¼ˆä¿æŒä½ åŸæœ‰çš„ Register ä»£ç ï¼Œä½†æ”¹ç”¨ s_ å‰ç¼€ï¼‰
     DependencyProperty NodeGraphPanel::NodeFillProperty()
     {
         return s_NodeFillProperty;
@@ -223,7 +223,7 @@ namespace winrt::XamlUICommand::implementation
         RebuildAll();
         ConnectCollectionEvents();
 
-        // Ö÷Ìâ±ä»¯ -> Ë¢ĞÂ
+        // ä¸»é¢˜å˜åŒ– -> åˆ·æ–°
         m_themeToken = ActualThemeChanged(
             [weak = get_weak()]
             (
@@ -442,7 +442,7 @@ namespace winrt::XamlUICommand::implementation
             NodeCornerRadius()
         };
 
-        // ×Ô¶¯¶Ô±È¶È£¨ÓëÄã AttachNodeElement Àï±£³ÖÒ»ÖÂ£©
+        // è‡ªåŠ¨å¯¹æ¯”åº¦ï¼ˆä¸ä½  AttachNodeElement é‡Œä¿æŒä¸€è‡´ï¼‰
         if (AutoContrast())
         {
             Windows::UI::Color cf{}, cs{}, ct{};
@@ -497,7 +497,7 @@ namespace winrt::XamlUICommand::implementation
             auto line = Shapes::Line{};
             auto eb = EdgeBrush();
             line.Stroke(eb ? eb : SolidColorBrush{ Windows::UI::Colors::Gray() });
-            line.StrokeThickness(EdgeThickness());         // Ä¬ÈÏÏßÌõ´ÖÏ¸Îª 2.5
+            line.StrokeThickness(EdgeThickness());         // é»˜è®¤çº¿æ¡ç²—ç»†ä¸º 2.5
             line.X1(from.Position().X + from.Size().Width / 2.0);
             line.Y1(from.Position().Y + from.Size().Height / 2.0);
             line.X2(to.Position().X + to.Size().Width / 2.0);
@@ -579,7 +579,7 @@ namespace winrt::XamlUICommand::implementation
         text.VerticalAlignment(VerticalAlignment::Center);
         text.TextTrimming(TextTrimming::CharacterEllipsis);
         text.Margin(Thickness{ 6 });
-        text.Foreground(ap.text);                  // Ê¹ÓÃ¶Ô±È¶ÈÊÊÓ¦Ëã·¨µ÷ÕûºóµÄÇ°¾°
+        text.Foreground(ap.text);                  // ä½¿ç”¨å¯¹æ¯”åº¦é€‚åº”ç®—æ³•è°ƒæ•´åçš„å‰æ™¯
         grid.Children().Append(text);
 
         // Tooltip (on hover)
@@ -592,7 +592,7 @@ namespace winrt::XamlUICommand::implementation
 
                 XamlUICommand::NodeInvokedEventArgs args{};
                 args.Node(node);
-                m_NodeInvoked(*this, args); // ´¥·¢ÊÂ¼ş£¨×¢Òâ£ºÓÃË½ÓĞ×Ö¶Î m_NodeInvoked£©
+                m_NodeInvoked(*this, args); // è§¦å‘äº‹ä»¶ï¼ˆæ³¨æ„ï¼šç”¨ç§æœ‰å­—æ®µ m_NodeInvokedï¼‰
 
                 auto fly = CreateDetailsFlyout(node);
                 fly.ShowAt(grid);
@@ -605,9 +605,9 @@ namespace winrt::XamlUICommand::implementation
         m_canvas.Children().Append(grid);
 
         // m_nodeElements[node.Id()] = grid; 
-        // std::unordered_map::operator[] µÄ¿Ó£ºoperator[] ÔÚ ¼ü²»´æÔÚ Ê±»áÊ¹ÓÃÄ¬ÈÏ¹¹Ôì¡£
-        // Ó³ÉäÖµÀàĞÍÊÇ Microsoft::UI::Xaml::FrameworkElement£¬ÔÚµ±Ç°±àÒëµ¥ÔªÀïËü²»ÊÇ¿ÉÄ¬ÈÏ¹¹ÔìµÄ£¬
-        // ÓÚÊÇ»á´¥·¢Ä£°åÊµÀı»¯´íÎó¡£²ÉÓÃ´øÖµ²åÈë½«±ÜÃâ´ËÎÊÌâ¡£
+        // std::unordered_map::operator[] çš„å‘ï¼šoperator[] åœ¨ é”®ä¸å­˜åœ¨ æ—¶ä¼šä½¿ç”¨é»˜è®¤æ„é€ ã€‚
+        // æ˜ å°„å€¼ç±»å‹æ˜¯ Microsoft::UI::Xaml::FrameworkElementï¼Œåœ¨å½“å‰ç¼–è¯‘å•å…ƒé‡Œå®ƒä¸æ˜¯å¯é»˜è®¤æ„é€ çš„ï¼Œ
+        // äºæ˜¯ä¼šè§¦å‘æ¨¡æ¿å®ä¾‹åŒ–é”™è¯¯ã€‚é‡‡ç”¨å¸¦å€¼æ’å…¥å°†é¿å…æ­¤é—®é¢˜ã€‚
         m_nodeElements.insert_or_assign(node.Id(), grid.as<Microsoft::UI::Xaml::FrameworkElement>());  
 
         // Listen for VM changes to live-update visuals
@@ -634,20 +634,20 @@ namespace winrt::XamlUICommand::implementation
         auto grid = it->second.as<Controls::Grid>();
         if (!grid) return;
 
-        // ³ß´ç¡¢Î»ÖÃ
+        // å°ºå¯¸ã€ä½ç½®
         grid.Width(node.Size().Width);
         grid.Height(node.Size().Height);
         Canvas::SetLeft(grid, node.Position().X);
         Canvas::SetTop(grid, node.Position().Y);
 
-        // ĞÎ×´¡¢ÎÄ±¾
+        // å½¢çŠ¶ã€æ–‡æœ¬
         auto shape = grid.Children().GetAt(0).as<Shapes::Shape>();
         auto text = grid.Children().GetAt(1).as<Controls::TextBlock>();
 
-        // Ñ¡ÖĞÌ¬
+        // é€‰ä¸­æ€
         shape.StrokeThickness(node.IsSelected() ? 3.0 : 1.0);
 
-        // Èç¹ûĞÎ×´ÀàĞÍ±äÁË£¬ÔòÖØ½¨ÔªËØ
+        // å¦‚æœå½¢çŠ¶ç±»å‹å˜äº†ï¼Œåˆ™é‡å»ºå…ƒç´ 
         if ((node.Shape() == NodeShape::Circle && !shape.try_as<Shapes::Ellipse>()) ||
             (node.Shape() == NodeShape::RoundedRect && !shape.try_as<Shapes::Rectangle>()))
         {
@@ -659,7 +659,7 @@ namespace winrt::XamlUICommand::implementation
             return;
         }
 
-        // ÔöÁ¿¸üĞÂÍâ¹Û
+        // å¢é‡æ›´æ–°å¤–è§‚
         auto ap = ComputeAppearance();
 
         if (auto rect = shape.try_as<Shapes::Rectangle>())
@@ -671,7 +671,7 @@ namespace winrt::XamlUICommand::implementation
         shape.Stroke(ap.stroke);
         text.Foreground(ap.text);
 
-        // ÎÄ±¾/Tooltip
+        // æ–‡æœ¬/Tooltip
         text.Text(ResolveLabel(node));
         Controls::ToolTipService::SetToolTip(grid, box_value(ResolveTooltip(node)));
     }
@@ -756,7 +756,7 @@ namespace winrt::XamlUICommand::implementation
 
         auto title = Controls::TextBlock{};
         title.Name(L"FlyoutContentTitle");
-        title.Text(std::format(L"½Úµã {}", node.Id()));
+        title.Text(std::format(L"èŠ‚ç‚¹ {}", node.Id()));
         title.FontSize(16);
         title.FontWeight(Windows::UI::Text::FontWeights::SemiBold());
         panel.Children().Append(title);
@@ -804,7 +804,7 @@ namespace winrt::XamlUICommand::implementation
         border.Child(panel);
         fly.Content(border);
 
-        // FIXME: ÏµÍ³±³¾°²ÄÖÊ¿ÉÄÜ´æÔÚÎÊÌâ£¬ÔÚÇ³É«Ä£Ê½ÏÂ¼¸ºõÎŞĞ§¹û
+        // FIXME: ç³»ç»ŸèƒŒæ™¯æè´¨å¯èƒ½å­˜åœ¨é—®é¢˜ï¼Œåœ¨æµ…è‰²æ¨¡å¼ä¸‹å‡ ä¹æ— æ•ˆæœ
         fly.SystemBackdrop(Microsoft::UI::Xaml::Media::DesktopAcrylicBackdrop());
         SetupAcrylicPresenter(fly, 12.0);
         return fly;
@@ -817,18 +817,18 @@ namespace winrt::XamlUICommand::implementation
         {
             auto p = e.Property();
 
-            // ±ßÏßÍâ¹Û
+            // è¾¹çº¿å¤–è§‚
             if (p == s_EdgeBrushProperty || p == s_EdgeThicknessProperty)
             {
                 self->RedrawEdges();
             }
 
-            // ½ÚµãÍâ¹Û
+            // èŠ‚ç‚¹å¤–è§‚
             if (p == s_NodeFillProperty || p == s_NodeStrokeProperty ||
                 p == s_NodeTextBrushProperty || p == s_NodeCornerRadiusProperty ||
                 p == s_AutoContrastProperty || p == s_ContrastThresholdProperty)
             {
-                // ÔöÁ¿¸üĞÂÑùÊ½
+                // å¢é‡æ›´æ–°æ ·å¼
                 for (auto const& kv : self->m_nodeElements)
                 {
                     if (auto node = self->GetNode(kv.first))
