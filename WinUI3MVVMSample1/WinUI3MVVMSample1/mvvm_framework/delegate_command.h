@@ -33,6 +33,8 @@
 //#include <debugapi.h>
 #include <mvvm_framework/mvvm_diagnostics.h>
 
+#include <mvvm_framework/MvvmFrameworkEvents.h>
+
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Microsoft.UI.Xaml.Input.h>
 #include <winrt/Microsoft.UI.Xaml.Data.h>
@@ -42,7 +44,8 @@ namespace mvvm
     using namespace mvvm::diagnostics;
     using namespace mvvm::exceptions;
 
-    using RelayDependencyCondition = std::function<bool(winrt::Windows::Foundation::IInspectable const&, winrt::Microsoft::UI::Xaml::Data::PropertyChangedEventArgs const&)>;
+    using RelayDependencyCondition = std::function<bool(winrt::Windows::Foundation::IInspectable const&, 
+        winrt::Microsoft::UI::Xaml::Data::PropertyChangedEventArgs const&)>;
     using AutoExecuteCondition = std::function<bool(winrt::Windows::Foundation::IInspectable const&)>;
 
     struct DependencyRegistration
@@ -52,63 +55,41 @@ namespace mvvm
         AutoExecuteCondition            autoExecuteCondition;           // Optional
     };
 
-    struct CanExecuteRequestedEventArgs : winrt::Windows::Foundation::IInspectable
-    {
-        CanExecuteRequestedEventArgs()
-        {
-            m_handled = CreateBooleanInspectable(false);
-        }
-
-        bool Handled() const
-        {
-            if (auto val = m_handled.try_as<winrt::Windows::Foundation::IPropertyValue>())
-            {
-                return val.GetBoolean();
-            }
-            return false;
-        }
-
-        void Handled(bool value)
-        {
-            m_handled = CreateBooleanInspectable(value);
-        }
-
-    protected:
-        static winrt::Windows::Foundation::IInspectable CreateBooleanInspectable(bool value)
-        {
-            auto propertyValueFactory = winrt::get_activation_factory<winrt::Windows::Foundation::PropertyValue,
-                winrt::Windows::Foundation::IPropertyValueStatics>();
-            return propertyValueFactory.CreateBoolean(value);
-        }
-
-    private:
-        winrt::Windows::Foundation::IInspectable Parameter;
-        winrt::Windows::Foundation::IInspectable m_handled;
-    };
-
-
     template <typename Parameter>
     struct delegate_command
         : winrt::implements<delegate_command<Parameter>, winrt::Microsoft::UI::Xaml::Input::ICommand>
     {
+        using NakedParameterType = std::conditional_t<std::is_same_v<Parameter, void>, void,
+            std::remove_const_t<std::remove_reference_t<Parameter>>>;
+        using ConstParameterType = std::conditional_t<std::is_same_v<Parameter, void>, void,
+            std::add_const_t<NakedParameterType>>;
+        using ExecuteHandler = std::function<void(std::add_lvalue_reference_t<ConstParameterType>)>;
+        using CanExecuteHandler = std::function<bool(std::add_lvalue_reference_t<ConstParameterType>)>;
+
     #pragma region constructors
 
         delegate_command() = default;
+        delegate_command(std::nullptr_t) noexcept {}
 
-        template <typename ExecuteHandler>
         delegate_command(ExecuteHandler&& executeHandler)
-            : m_executeHandler(std::move(executeHandler))
-        {
-            static_assert(std::is_invocable_v<ExecuteHandler, Parameter>);
+            : m_executeHandler(std::move(executeHandler)) {
         }
 
-        template <typename ExecuteHandler, typename CanExecuteHandler>
         delegate_command(ExecuteHandler&& executeHandler, CanExecuteHandler&& canExecuteHandler)
-            : m_executeHandler(std::move(executeHandler))
-            , m_canExecuteHandler(std::move(canExecuteHandler))
+            : m_executeHandler(std::move(executeHandler)),
+            m_canExecuteHandler(std::move(canExecuteHandler)) {
+        }
+
+        template <typename ExecuteHandlerT, typename CanExecuteHandlerT>
+        delegate_command(
+            winrt::Windows::Foundation::IInspectable const& notifier,
+            ExecuteHandlerT&& executeHandler,
+            CanExecuteHandlerT&& canExecuteHandler,
+            std::vector<DependencyRegistration> const& dependencies)
+            : m_executeHandler(std::move(executeHandler)),
+            m_canExecuteHandler(std::move(canExecuteHandler))
         {
-            static_assert(std::is_invocable_v<ExecuteHandler, Parameter>);
-            static_assert(std::is_invocable_r_v<bool, CanExecuteHandler, Parameter>);
+            AttachDependencies(notifier, dependencies);
         }
 
         ~delegate_command()
@@ -132,54 +113,12 @@ namespace mvvm
             }
         }
 
-        template <typename ExecuteHandler>
-        void Initialize(ExecuteHandler&& executeHandler)
-        {
-            static_assert(std::is_invocable_v<ExecuteHandler, Parameter>);
-
-            if (m_executeHandler)
-            {
-                throw winrt::hresult_changed_state(L"Object has already been initialized: winrt::xaml::delegate_command");
-            }
-
-            m_executeHandler = std::forward<ExecuteHandler>(executeHandler);
-        }
-
-        template <typename ExecuteHandler, typename CanExecuteHandler>
-        void Initialize(ExecuteHandler&& executeHandler, CanExecuteHandler&& canExecuteHandler)
-        {
-            static_assert(std::is_invocable_v<ExecuteHandler, Parameter>);
-            static_assert(std::is_invocable_r_v<bool, CanExecuteHandler, Parameter>);
-
-            Initialize(std::forward<ExecuteHandler>(executeHandler));
-            m_canExecuteHandler = std::forward<CanExecuteHandler>(canExecuteHandler);
-        }
-
-        /*template <typename ExecuteHandler>
-        void Initialize(winrt::Windows::Foundation::IInspectable const& ownerObject, ExecuteHandler&& executeHandler)
-        {
-            if (ownerObject)
-            {
-                m_ownerObject = winrt::make_weak(ownerObject);
-            }
-            Initialize(std::forward<ExecuteHandler>(executeHandler));
-        }
-
-        template <typename ExecuteHandler, typename CanExecuteHandler>
-        void Initialize(winrt::Windows::Foundation::IInspectable const& ownerObject, ExecuteHandler&& executeHandler, CanExecuteHandler&& canExecuteHandler)
-        {
-            if (ownerObject)
-            {
-                m_ownerObject = winrt::make_weak(ownerObject);
-            }
-            Initialize(std::forward<ExecuteHandler>(executeHandler), std::forward<CanExecuteHandler>(canExecuteHandler));
-        }*/
-
     #pragma endregion
 
     #pragma region ICommand
 
-        winrt::event_token CanExecuteChanged(winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
+        winrt::event_token CanExecuteChanged(
+            winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
         {
             return m_eventCanExecuteChanged.add(handler);
         }
@@ -189,41 +128,116 @@ namespace mvvm
             m_eventCanExecuteChanged.remove(token);
         }
 
+        // CanExecuteRequested
+        winrt::event_token CanExecuteRequested(
+            winrt::Windows::Foundation::TypedEventHandler<
+            winrt::Windows::Foundation::IInspectable, 
+            winrt::Mvvm::Framework::Core::CanExecuteRequestedEventArgs> const& handler)
+        {
+            return m_eventCanExecuteRequested.add(handler);
+        }
+        void CanExecuteRequested(winrt::event_token const& token) noexcept
+        {
+            m_eventCanExecuteRequested.remove(token);
+        }
+
+        // CanExecuteCompleted
+        winrt::event_token CanExecuteCompleted(
+            winrt::Windows::Foundation::TypedEventHandler<
+            winrt::Windows::Foundation::IInspectable,
+            winrt::Mvvm::Framework::Core::CanExecuteCompletedEventArgs> const& handler)
+        {
+            return m_eventCanExecuteCompleted.add(handler);
+        }
+        void CanExecuteCompleted(winrt::event_token const& token) noexcept
+        {
+            m_eventCanExecuteCompleted.remove(token);
+        }
+
+        // ExecuteRequested
+        winrt::event_token ExecuteRequested(
+            winrt::Windows::Foundation::TypedEventHandler<
+            winrt::Windows::Foundation::IInspectable, 
+            winrt::Mvvm::Framework::Core::ExecuteRequestedEventArgs> const& handler)
+        {
+            return m_eventExecuteRequested.add(handler);
+        }
+        void ExecuteRequested(winrt::event_token const& token) noexcept
+        {
+            m_eventExecuteRequested.remove(token);
+        }
+
+        // ExecuteCompleted
+        winrt::event_token ExecuteCompleted(
+            winrt::Windows::Foundation::TypedEventHandler<
+            winrt::Windows::Foundation::IInspectable, 
+            winrt::Mvvm::Framework::Core::ExecuteCompletedEventArgs> const& handler)
+        {
+            return m_eventExecuteCompleted.add(handler);
+        }
+        void ExecuteCompleted(winrt::event_token const& token) noexcept
+        {
+            m_eventExecuteCompleted.remove(token);
+        }
+
         // ICommand required methods
         bool CanExecute(winrt::Windows::Foundation::IInspectable const& parameter)
         {
-            //auto strongReference = m_ownerObject.get();
-            //if (m_ownerObject && !strongReference)
-            //{
-            //    return false;
-            //}
+            winrt::Mvvm::Framework::Core::CanExecuteRequestedEventArgs reqArgs(parameter);
+            if (m_eventCanExecuteRequested) m_eventCanExecuteRequested(*this, reqArgs);
 
-            return CanExecutePrivate(parameter);
+            bool state = true;
+            if (!reqArgs.Handled())
+            {
+                if (!m_canExecuteHandler) state = true;
+                else if (!m_executeHandler) state = false;
+                else
+                {
+                    if constexpr (std::is_same_v<Parameter, void>)
+                        state = std::invoke(m_canExecuteHandler);
+                    else if constexpr (std::is_same_v<NakedParameterType, winrt::Windows::Foundation::IInspectable>)
+                        state = std::invoke(m_canExecuteHandler, parameter);
+                    else if constexpr (std::is_convertible_v<NakedParameterType, winrt::Windows::Foundation::IInspectable>)
+                        state = std::invoke(m_canExecuteHandler, parameter.try_as<NakedParameterType>());
+                    else
+                        state = std::invoke(m_canExecuteHandler, winrt::unbox_value_or<NakedParameterType>(parameter, {}));
+                }
+            }
+
+            if (m_eventCanExecuteCompleted)
+                m_eventCanExecuteCompleted(*this, winrt::Mvvm::Framework::Core::CanExecuteCompletedEventArgs(parameter, state));
+
+            return state;
         }
 
         void Execute(winrt::Windows::Foundation::IInspectable const& parameter)
         {
-            //auto strongReference = m_ownerObject.get();
-            //if (m_ownerObject && !strongReference)
-            //{
-            //    return;
-            //}
+            if (m_eventExecuteRequested)
+                m_eventExecuteRequested(*this, winrt::Mvvm::Framework::Core::ExecuteRequestedEventArgs(parameter));
 
-            if (this->CanExecutePrivate(parameter))
+            winrt::hresult error = S_OK;
+            try
             {
-                if constexpr (std::is_same_v<Parameter, winrt::Windows::Foundation::IInspectable>)
-                {
+                if constexpr (std::is_same_v<Parameter, void>)
+                    std::invoke(m_executeHandler);
+                else if constexpr (std::is_same_v<NakedParameterType, winrt::Windows::Foundation::IInspectable>)
                     std::invoke(m_executeHandler, parameter);
-                }
-                else if constexpr (std::is_convertible_v<Parameter, winrt::Windows::Foundation::IInspectable>)
-                {
-                    std::invoke(m_executeHandler, parameter.try_as<Parameter>());
-                }
+                else if constexpr (std::is_convertible_v<NakedParameterType, winrt::Windows::Foundation::IInspectable>)
+                    std::invoke(m_executeHandler, parameter.try_as<NakedParameterType>());
                 else
-                {
-                    std::invoke(m_executeHandler, winrt::unbox_value(parameter));
-                }
+                    std::invoke(m_executeHandler, winrt::unbox_value_or<NakedParameterType>(parameter, {}));
             }
+            catch (winrt::hresult_error const& e) { error = e.code(); }
+            catch (...) { error = E_FAIL; }
+
+            if (m_eventExecuteCompleted)
+                m_eventExecuteCompleted(*this, winrt::Mvvm::Framework::Core::ExecuteCompletedEventArgs(parameter, error));
+        }
+
+        void raise_CanExecuteChanged()
+        {
+            if (m_eventCanExecuteChanged)
+                m_eventCanExecuteChanged(*this, nullptr);
         }
 
     #pragma endregion
@@ -302,30 +316,52 @@ namespace mvvm
             }
         }
 
-        // Create a delegate_command that contains notification handlers and rechecks the command status depending on a change in one of multiple dependent properties.
-        template <typename ExecuteHandler, typename CanExecuteHandler>
-        delegate_command(
+        void AttachDependencies(
             winrt::Windows::Foundation::IInspectable const& notifier,
-            ExecuteHandler&& executeHandler,
-            CanExecuteHandler&& canExecuteHandler,
-            std::vector<winrt::hstring> dependencyProps = {})
-            : m_executeHandler(std::move(executeHandler)),
-            m_canExecuteHandler(std::move(canExecuteHandler))
+            std::vector<DependencyRegistration> const& dependencies)
         {
-            if (!notifier)
-                throw winrt::hresult_invalid_argument(L"Notifier cannot be null.");
-
-            auto inpc = notifier.try_as<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged>();
-            if (!inpc) return;
-
-            // Add dependency property
-            for (auto const& prop : dependencyProps)
+            if (auto inpc = notifier.try_as<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged>())
             {
-                AttachProperty(notifier, prop);
+                for (auto const& dep : dependencies)
+                {
+                    AttachProperty(notifier, dep.propertyName, dep.relayDependencyCondition);
+                    if (dep.autoExecuteCondition)
+                        RegisterAutoExecute(notifier, dep.autoExecuteCondition);
+                }
             }
         }
 
-        template <typename ExecuteHandler, typename CanExecuteHandler>
+        // TODO:  i need to make it clear that the notifier must be a DependencyObject,
+        // and that the property name must be a valid dependency property name.
+        // 
+        // use vector<hsring> as a parameter is not a good idea, because it's hard to maintain the order of the dependencies.
+        // 
+        // Create a delegate_command that contains notification handlers and rechecks the command status depending on a change in one of multiple dependent properties.
+        //template <typename ExecuteHandler, typename CanExecuteHandler>
+        //delegate_command(
+        //    winrt::Windows::Foundation::IInspectable const& notifier,
+        //    ExecuteHandler&& executeHandler,
+        //    CanExecuteHandler&& canExecuteHandler,
+        //    std::vector<winrt::hstring> dependencyProps = {})
+        //    : m_executeHandler(std::move(executeHandler)),
+        //    m_canExecuteHandler(std::move(canExecuteHandler))
+        //{
+        //    if (!notifier)
+        //        throw winrt::hresult_invalid_argument(L"Notifier cannot be null.");
+
+        //    auto inpc = notifier.try_as<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged>();
+        //    if (!inpc) return;
+
+        //    // Add dependency property
+        //    for (auto const& prop : dependencyProps)
+        //    {
+        //        AttachProperty(notifier, prop);
+        //    }
+        //}
+
+        // i had changed this without testing it(without parameter check in new ctor above this one).
+        // i think it's better to use a struct to store the dependency registration information.
+       /* template <typename ExecuteHandler, typename CanExecuteHandler>
         delegate_command(
             winrt::Windows::Foundation::IInspectable const& notifier,
             ExecuteHandler&& executeHandler,
@@ -383,62 +419,87 @@ namespace mvvm
                         });
                 }
             }
-        }
-    #pragma endregion
-
-    #pragma region methods
-
-        operator bool() { return m_executeHandler; }
-
-        void raise_CanExecuteChanged()
-        {
-            if (m_eventCanExecuteChanged)
-            {
-                m_eventCanExecuteChanged(*this, winrt::Windows::Foundation::IInspectable{ nullptr });
-            }
-        }
-
-    #pragma endregion
-
-    #pragma region private implementation
-
-    private:
-        bool CanExecutePrivate(winrt::Windows::Foundation::IInspectable const& parameter)
-        {
-            if (!m_canExecuteHandler)
-            {
-                return true;
-            }
-            else if constexpr (std::is_same_v<Parameter, winrt::Windows::Foundation::IInspectable>)
-            {
-                return std::invoke(m_canExecuteHandler, parameter);
-            }
-            else if constexpr (std::is_convertible_v<Parameter, winrt::Windows::Foundation::IInspectable>)
-            {
-                return std::invoke(m_canExecuteHandler, parameter.try_as<Parameter>());
-            }
-            else
-            {
-                return std::invoke(m_canExecuteHandler, winrt::unbox_value(parameter));
-            }
-        }
-
+        }*/
     #pragma endregion
 
     #pragma region instance fields
     private:
         //winrt::weak_ref<winrt::Windows::Foundation::IInspectable> m_ownerObject;
 
-        std::function<void(Parameter const&)> m_executeHandler;
-        std::function<bool(Parameter const&)> m_canExecuteHandler;
-        winrt::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> m_eventCanExecuteChanged;
+        ExecuteHandler m_executeHandler;
+        CanExecuteHandler m_canExecuteHandler;
+        winrt::event< winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> > m_eventCanExecuteChanged;
+
+        winrt::event< winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Mvvm::Framework::Core::CanExecuteRequestedEventArgs> > m_eventCanExecuteRequested;
+        winrt::event< winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Mvvm::Framework::Core::CanExecuteCompletedEventArgs> > m_eventCanExecuteCompleted;
+        winrt::event< winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Mvvm::Framework::Core::ExecuteRequestedEventArgs> > m_eventExecuteRequested;
+        winrt::event< winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Mvvm::Framework::Core::ExecuteCompletedEventArgs> > m_eventExecuteCompleted;
         
-        std::vector<winrt::weak_ref<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged>> m_dependencyNotifiers;
-        std::vector<winrt::event_token> m_dependencyTokens;
-        std::vector<winrt::weak_ref<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged>> m_autoExecuteNotifiers;
-        std::vector<winrt::event_token> m_autoExecuteTokens;
+        std::vector< winrt::weak_ref<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged> > m_dependencyNotifiers;
+        std::vector< winrt::event_token > m_dependencyTokens;
+        std::vector< winrt::weak_ref<winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged> > m_autoExecuteNotifiers;
+        std::vector< winrt::event_token > m_autoExecuteTokens;
     #pragma endregion
     };
 }
+
+//#include <winrt/base.h>
+//
+//namespace winrt::impl
+//{
+//    // CanExecuteRequestedEventArgs
+//    template <> struct category<mvvm::CanExecuteRequestedEventArgs>
+//    {
+//        using type = class_category;
+//    };
+//
+//    template <> inline constexpr auto name_v<mvvm::CanExecuteRequestedEventArgs>
+//    = L"mvvm.CanExecuteRequestedEventArgs";
+//
+//    // {DF675D0D-2004-461D-90BE-ECA848D6D37E}
+//    template <> inline constexpr guid guid_v<mvvm::CanExecuteRequestedEventArgs>
+//    { 0xdf675d0d, 0x2004, 0x461d, { 0x90, 0xbe, 0xec, 0xa8, 0x48, 0xd6, 0xd3, 0x7e } };
+//
+//
+//    // CanExecuteCompletedEventArgs
+//    template <> struct category<mvvm::CanExecuteCompletedEventArgs>
+//    {
+//        using type = class_category;
+//    };
+//
+//    template <> inline constexpr auto name_v<mvvm::CanExecuteCompletedEventArgs>
+//    = L"mvvm.CanExecuteCompletedEventArgs";
+//
+//    // {904DFD32-8BEF-4933-8513-77B850869342}
+//    template <> inline constexpr guid guid_v<mvvm::CanExecuteCompletedEventArgs>
+//    { 0x904dfd32, 0x8bef, 0x4933, { 0x85, 0x13, 0x77, 0xb8, 0x50, 0x86, 0x93, 0x42 } };
+//
+//    // ExecuteRequestedEventArgs
+//    template <> struct category<mvvm::ExecuteRequestedEventArgs>
+//    {
+//        using type = class_category;
+//    };
+//
+//    template <> inline constexpr auto name_v<mvvm::ExecuteRequestedEventArgs>
+//    = L"mvvm.ExecuteRequestedEventArgs";
+//
+//    // {310AF355-A34A-4A3C-8ED6-1008C8EF38BA}
+//    template <> inline constexpr guid guid_v<mvvm::ExecuteRequestedEventArgs>
+//    { 0x310af355, 0xa34a, 0x4a3c, { 0x8e, 0xd6, 0x10, 0x8, 0xc8, 0xef, 0x38, 0xba } };
+//
+//    // ExecuteCompletedEventArgs
+//    template <> struct category<mvvm::ExecuteCompletedEventArgs>
+//    {
+//        using type = class_category;
+//    };
+//
+//    template <> inline constexpr auto name_v<mvvm::ExecuteCompletedEventArgs>
+//    = L"mvvm.ExecuteCompletedEventArgs";
+//
+//    // {0A874FF8-9BB0-4305-B74D-50633A41B25B}
+//    template <> inline constexpr guid guid_v<mvvm::ExecuteCompletedEventArgs>
+//    { 0xa874ff8, 0x9bb0, 0x4305, { 0xb7, 0x4d, 0x50, 0x63, 0x3a, 0x41, 0xb2, 0x5b } };
+//
+//}
 
 #endif // __MVVM_CPPWINRT_DELEGATE_COMMAND_H_INCLUDED

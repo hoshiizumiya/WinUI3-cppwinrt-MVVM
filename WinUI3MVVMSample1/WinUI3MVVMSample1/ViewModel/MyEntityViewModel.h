@@ -53,8 +53,10 @@ namespace winrt::WinUI3MVVMSample1::implementation
                 *this, 
                 [this](auto&&) { return MyProperty() >= 10; });*/
 
+            // 方法中也可以使用 winrt::make_self 
+
             // 方法4：使用 DelegateCommandBuilder 来简化命令对象创建和初始化
-            m_resetCommand = ::mvvm::DelegateCommandBuilder<IInspectable>(*this)
+            m_resetCommand = ::mvvm::DelegateCommandBuilder<winrt::Windows::Foundation::IInspectable>(*this)
                 .Execute([this](auto&&) { ExecuteResetCommand(); })
                 .CanExecute([this](auto&&) { return MyProperty() > 0; })
                 .DependsOn(L"MyProperty",
@@ -74,6 +76,55 @@ namespace winrt::WinUI3MVVMSample1::implementation
             {
                 OutputDebugString(L"ICommand.ResetCommand is not present\n");
             }
+
+
+            // 订阅事件以便调试观察
+            auto dc = m_resetCommand.as<::mvvm::delegate_command<winrt::Windows::Foundation::IInspectable>>();
+
+            dc->CanExecuteRequested(
+                [](auto&& sender, auto&& args)
+                {
+                    OutputDebugString(L"[Test] CanExecuteRequested fired\n");
+                    if (auto param = args.Parameter())
+                    {
+                        OutputDebugString((L"    Parameter: " + param.as<winrt::hstring>() + L"\n").c_str());
+                    }
+
+                    // 模拟拦截：假设我们想强制禁用命令
+                    // args.Handled(true);
+                });
+
+            dc->CanExecuteCompleted(
+                [](auto&&, auto&& args)
+                {
+                    std::wstring msg = L"[Test] CanExecuteCompleted fired, result = "
+                        + std::to_wstring(args.Result()) + L"\n";
+                    OutputDebugString(msg.c_str());
+                });
+
+            dc->ExecuteRequested(
+                [](auto&&, auto&& args)
+                {
+                    OutputDebugString(L"[Test] ExecuteRequested fired\n");
+                    if (auto param = args.Parameter())
+                    {
+                        OutputDebugString((L"    Parameter: " + param.as<winrt::hstring>() + L"\n").c_str());
+                    }
+                });
+
+            dc->ExecuteCompleted(
+                [](auto&&, auto&& args)
+                {
+                    std::wstring msg = L"[Test] ExecuteCompleted fired, succeeded = "
+                        + std::to_wstring(args.Succeeded()) + L"\n";
+                    OutputDebugString(msg.c_str());
+
+                    if (!args.Succeeded())
+                    {
+                        std::wstring err = L"    Error: " + std::to_wstring(args.Error()) + L"\n";
+                        OutputDebugString(err.c_str());
+                    }
+                });
 
         };
 
