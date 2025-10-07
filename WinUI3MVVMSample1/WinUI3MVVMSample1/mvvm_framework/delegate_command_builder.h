@@ -1,4 +1,4 @@
-//*********************************************************
+﻿//*********************************************************
 //
 //    Copyright (c) Millennium R&D Team. All rights reserved.
 //    This code is licensed under the MIT License.
@@ -57,7 +57,7 @@ namespace mvvm
 
         auto Build()
         {
-            return winrt::make<delegate_command<Parameter>>(
+            return winrt::make<DelegateCommand<Parameter>>(
                 m_notifier,
                 m_executeHandler,
                 m_canExecuteHandler,

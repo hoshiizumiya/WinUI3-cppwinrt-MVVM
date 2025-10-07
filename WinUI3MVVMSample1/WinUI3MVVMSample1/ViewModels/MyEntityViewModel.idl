@@ -1,0 +1,28 @@
+﻿namespace WinUI3MVVMSample1
+{
+    [default_interface]
+    runtimeclass MyEntityViewModel
+        : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        MyEntityViewModel();
+        Int32 MyProperty;
+        void IncrementProperty();
+        Microsoft.UI.Xaml.Input.ICommand ResetCommand;
+
+        String FirstName;
+        String LastName;
+        String FullName { get; };
+
+        Int32  Age;
+        String AgeText;
+        String AgeErrorsText;
+
+        Microsoft.UI.Xaml.Input.ICommand AsyncCommand;
+        Microsoft.UI.Xaml.Input.ICommand CancelAsyncOpCommand;
+        Boolean IsValid;
+        Boolean IsBusy;
+        String StatusText;
+
+        void CancelSave();
+    }
+}

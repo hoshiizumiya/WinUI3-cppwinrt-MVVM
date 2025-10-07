@@ -10,11 +10,14 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="MainWindow.idl" />
+    <Midl Include="mvvm_framework\mvvm_framework_events.idl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="ViewModel\MyEntityViewModel.cpp" />
+    <ClCompile Include="mvvm_framework\mvvm_framework_events.cpp" />
+    <ClCompile Include="Models\MyEntity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -29,6 +32,10 @@
     <ClInclude Include="mvvm_framework\delegate_command_builder.h" />
     <ClInclude Include="Helpers\ObjectConverter.hpp" />
     <ClInclude Include="mvvm_framework\mvvm_diagnostics.h" />
+    <ClInclude Include="mvvm_framework\mvvm_framework_events.h" />
+    <ClInclude Include="mvvm_framework\async_command.h" />
+    <ClInclude Include="mvvm_framework\async_command_builder.h" />
+    <ClInclude Include="Models\MyEntity.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">

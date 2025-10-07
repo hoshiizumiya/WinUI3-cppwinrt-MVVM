@@ -33,7 +33,7 @@
 //#include <debugapi.h>
 #include <mvvm_framework/mvvm_diagnostics.h>
 
-#include <mvvm_framework/MvvmFrameworkEvents.h>
+#include <mvvm_framework/mvvm_framework_events.h>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Microsoft.UI.Xaml.Input.h>
@@ -56,8 +56,8 @@ namespace mvvm
     };
 
     template <typename Parameter>
-    struct delegate_command
-        : winrt::implements<delegate_command<Parameter>, winrt::Microsoft::UI::Xaml::Input::ICommand>
+    struct DelegateCommand
+        : winrt::implements<DelegateCommand<Parameter>, winrt::Microsoft::UI::Xaml::Input::ICommand>
     {
         using NakedParameterType = std::conditional_t<std::is_same_v<Parameter, void>, void,
             std::remove_const_t<std::remove_reference_t<Parameter>>>;
@@ -68,20 +68,20 @@ namespace mvvm
 
     #pragma region constructors
 
-        delegate_command() = default;
-        delegate_command(std::nullptr_t) noexcept {}
+        DelegateCommand() = default;
+        DelegateCommand(std::nullptr_t) noexcept {}
 
-        delegate_command(ExecuteHandler&& executeHandler)
+        DelegateCommand(ExecuteHandler&& executeHandler)
             : m_executeHandler(std::move(executeHandler)) {
         }
 
-        delegate_command(ExecuteHandler&& executeHandler, CanExecuteHandler&& canExecuteHandler)
+        DelegateCommand(ExecuteHandler&& executeHandler, CanExecuteHandler&& canExecuteHandler)
             : m_executeHandler(std::move(executeHandler)),
             m_canExecuteHandler(std::move(canExecuteHandler)) {
         }
 
         template <typename ExecuteHandlerT, typename CanExecuteHandlerT>
-        delegate_command(
+        DelegateCommand(
             winrt::Windows::Foundation::IInspectable const& notifier,
             ExecuteHandlerT&& executeHandler,
             CanExecuteHandlerT&& canExecuteHandler,
@@ -92,7 +92,7 @@ namespace mvvm
             AttachDependencies(notifier, dependencies);
         }
 
-        ~delegate_command()
+        ~DelegateCommand()
         {
             // remove RelayDependency
             for (size_t i = 0; i < m_dependencyNotifiers.size(); ++i)
@@ -234,7 +234,7 @@ namespace mvvm
                 m_eventExecuteCompleted(*this, winrt::Mvvm::Framework::Core::ExecuteCompletedEventArgs(parameter, error));
         }
 
-        void raise_CanExecuteChanged()
+        void RaiseCanExecuteChangedEvent()
         {
             if (m_eventCanExecuteChanged)
                 m_eventCanExecuteChanged(*this, nullptr);
@@ -255,7 +255,7 @@ namespace mvvm
             {
                 if (!cond || cond(sender, args))
                 {
-                    raise_CanExecuteChanged();
+                    RaiseCanExecuteChangedEvent();
                 }
             }
         }
@@ -294,7 +294,7 @@ namespace mvvm
         }
 
         // Adds an auto-execute dependency to the command, which will trigger Execute when the dependency changes.
-        void RegisterAutoExecute(
+        void RegisterAutoExecuteCond(
             winrt::Windows::Foundation::IInspectable const& notifier,
             AutoExecuteCondition condition)
         {
@@ -326,7 +326,7 @@ namespace mvvm
                 {
                     AttachProperty(notifier, dep.propertyName, dep.relayDependencyCondition);
                     if (dep.autoExecuteCondition)
-                        RegisterAutoExecute(notifier, dep.autoExecuteCondition);
+                        RegisterAutoExecuteCond(notifier, dep.autoExecuteCondition);
                 }
             }
         }
@@ -336,9 +336,9 @@ namespace mvvm
         // 
         // use vector<hsring> as a parameter is not a good idea, because it's hard to maintain the order of the dependencies.
         // 
-        // Create a delegate_command that contains notification handlers and rechecks the command status depending on a change in one of multiple dependent properties.
+        // Create a DelegateCommand that contains notification handlers and rechecks the command status depending on a change in one of multiple dependent properties.
         //template <typename ExecuteHandler, typename CanExecuteHandler>
-        //delegate_command(
+        //DelegateCommand(
         //    winrt::Windows::Foundation::IInspectable const& notifier,
         //    ExecuteHandler&& executeHandler,
         //    CanExecuteHandler&& canExecuteHandler,
@@ -362,7 +362,7 @@ namespace mvvm
         // i had changed this without testing it(without parameter check in new ctor above this one).
         // i think it's better to use a struct to store the dependency registration information.
        /* template <typename ExecuteHandler, typename CanExecuteHandler>
-        delegate_command(
+        DelegateCommand(
             winrt::Windows::Foundation::IInspectable const& notifier,
             ExecuteHandler&& executeHandler,
             CanExecuteHandler&& canExecuteHandler,
@@ -412,7 +412,7 @@ namespace mvvm
 
                 if (dep.autoExecuteCondition)
                 {
-                    RegisterAutoExecute(notifier,
+                    RegisterAutoExecuteCond(notifier,
                         [cond = dep.autoExecuteCondition](auto const& sender)
                         {
                             return cond(sender);
@@ -424,8 +424,6 @@ namespace mvvm
 
     #pragma region instance fields
     private:
-        //winrt::weak_ref<winrt::Windows::Foundation::IInspectable> m_ownerObject;
-
         ExecuteHandler m_executeHandler;
         CanExecuteHandler m_canExecuteHandler;
         winrt::event< winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> > m_eventCanExecuteChanged;
@@ -442,64 +440,5 @@ namespace mvvm
     #pragma endregion
     };
 }
-
-//#include <winrt/base.h>
-//
-//namespace winrt::impl
-//{
-//    // CanExecuteRequestedEventArgs
-//    template <> struct category<mvvm::CanExecuteRequestedEventArgs>
-//    {
-//        using type = class_category;
-//    };
-//
-//    template <> inline constexpr auto name_v<mvvm::CanExecuteRequestedEventArgs>
-//    = L"mvvm.CanExecuteRequestedEventArgs";
-//
-//    // {DF675D0D-2004-461D-90BE-ECA848D6D37E}
-//    template <> inline constexpr guid guid_v<mvvm::CanExecuteRequestedEventArgs>
-//    { 0xdf675d0d, 0x2004, 0x461d, { 0x90, 0xbe, 0xec, 0xa8, 0x48, 0xd6, 0xd3, 0x7e } };
-//
-//
-//    // CanExecuteCompletedEventArgs
-//    template <> struct category<mvvm::CanExecuteCompletedEventArgs>
-//    {
-//        using type = class_category;
-//    };
-//
-//    template <> inline constexpr auto name_v<mvvm::CanExecuteCompletedEventArgs>
-//    = L"mvvm.CanExecuteCompletedEventArgs";
-//
-//    // {904DFD32-8BEF-4933-8513-77B850869342}
-//    template <> inline constexpr guid guid_v<mvvm::CanExecuteCompletedEventArgs>
-//    { 0x904dfd32, 0x8bef, 0x4933, { 0x85, 0x13, 0x77, 0xb8, 0x50, 0x86, 0x93, 0x42 } };
-//
-//    // ExecuteRequestedEventArgs
-//    template <> struct category<mvvm::ExecuteRequestedEventArgs>
-//    {
-//        using type = class_category;
-//    };
-//
-//    template <> inline constexpr auto name_v<mvvm::ExecuteRequestedEventArgs>
-//    = L"mvvm.ExecuteRequestedEventArgs";
-//
-//    // {310AF355-A34A-4A3C-8ED6-1008C8EF38BA}
-//    template <> inline constexpr guid guid_v<mvvm::ExecuteRequestedEventArgs>
-//    { 0x310af355, 0xa34a, 0x4a3c, { 0x8e, 0xd6, 0x10, 0x8, 0xc8, 0xef, 0x38, 0xba } };
-//
-//    // ExecuteCompletedEventArgs
-//    template <> struct category<mvvm::ExecuteCompletedEventArgs>
-//    {
-//        using type = class_category;
-//    };
-//
-//    template <> inline constexpr auto name_v<mvvm::ExecuteCompletedEventArgs>
-//    = L"mvvm.ExecuteCompletedEventArgs";
-//
-//    // {0A874FF8-9BB0-4305-B74D-50633A41B25B}
-//    template <> inline constexpr guid guid_v<mvvm::ExecuteCompletedEventArgs>
-//    { 0xa874ff8, 0x9bb0, 0x4305, { 0xb7, 0x4d, 0x50, 0x63, 0x3a, 0x41, 0xb2, 0x5b } };
-//
-//}
 
 #endif // __MVVM_CPPWINRT_DELEGATE_COMMAND_H_INCLUDED

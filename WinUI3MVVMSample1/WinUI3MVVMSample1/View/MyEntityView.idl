@@ -1,4 +1,4 @@
-import "ViewModel/MyEntityViewModel.idl";
+﻿import "ViewModels/MyEntityViewModel.idl";
 
 namespace WinUI3MVVMSample1.View
 {

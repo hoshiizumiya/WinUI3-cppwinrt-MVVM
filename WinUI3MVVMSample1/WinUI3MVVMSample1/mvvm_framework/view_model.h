@@ -18,11 +18,11 @@
 namespace mvvm
 {
     template <typename Derived>
-    struct __declspec(empty_bases)view_model : view_model_base<Derived>
+    struct __declspec(empty_bases)ViewModel : ViewModelBase<Derived>
     {
         friend typename Derived;
 
-        view_model(winrt::Microsoft::UI::Dispatching::DispatcherQueue const& dispatcher)
+        ViewModel(winrt::Microsoft::UI::Dispatching::DispatcherQueue const& dispatcher)
         {
             if (dispatcher)
             {
@@ -48,15 +48,15 @@ namespace mvvm
 
         winrt::Microsoft::UI::Dispatching::DispatcherQueue Dispatcher() const { return m_dispatcher; }
 
-        winrt::Microsoft::UI::Dispatching::DispatcherQueue get_dispatcher_override() { return m_dispatcher; }
+        winrt::Microsoft::UI::Dispatching::DispatcherQueue GetDispatcherOverride() { return m_dispatcher; }
 
     private:
-        view_model() : view_model(nullptr)
+        ViewModel() : ViewModel(nullptr)
         {
-            // Default constructor is private to ensure that the view_model is always constructed with a dispatcher.
+            // Default constructor is private to ensure that the ViewModel is always constructed with a dispatcher.
             // This prevents issues with UI thread access.
-            static_assert(!std::is_same_v<Derived, view_model>, "Default constructor is not allowed for view_model.");
-            static_assert(std::is_base_of_v<view_model<Derived>, Derived>, "Derived class must inherit from view_model");
+            static_assert(!std::is_same_v<Derived, ViewModel>, "Default constructor is not allowed for ViewModel.");
+            static_assert(std::is_base_of_v<ViewModel<Derived>, Derived>, "Derived class must inherit from ViewModel");
         }
 
     protected:

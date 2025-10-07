@@ -8,16 +8,125 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
-        <TextBlock Text="标准属性 (MyProperty)" FontWeight="Bold" Margin="0,0,0,5"/>
-        <Button Click="{x:Bind MainViewModel.IncrementProperty}" Content="增加属性值" Margin="0,5"/>
-        <TextBlock Text="{x:Bind MainViewModel.MyProperty, Mode=OneWay}" 
-                    HorizontalAlignment="Center" 
-                    FontSize="20" Margin="0,5"/>
+    <ScrollViewer Padding="20">
+        <StackPanel Spacing="24">
 
-        <!-- Reset 按钮，绑定命令 -->
-        <Button Content="重置属性" 
-                Command="{x:Bind MainViewModel.ResetCommand}" 
-                Margin="0,5"/>
-    </StackPanel>
+            <!-- Section 0: 原示例（标准属性/命令） -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="1. 标准属性 (MyProperty)" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="{x:Bind MainViewModel.IncrementProperty}" Content="增加属性值"/>
+                    <Button Content="重置属性" Command="{x:Bind MainViewModel.ResetCommand}"/>
+                </StackPanel>
+                <TextBlock Text="{x:Bind MainViewModel.MyProperty, Mode=OneWay}" FontSize="20" />
+            </StackPanel>
+
+            <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+
+            <!-- Section 1: 通知依赖属性 -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="2. 属性依赖：FirstName/LastName → FullName" FontWeight="SemiBold"/>
+                <TextBlock Text="修改 First/LastName 后，FullName 自动刷新（依赖广播触发）" Opacity="0.8"/>
+                <Grid ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="FirstName"/>
+                    <TextBox   Grid.Row="0" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="LastName"/>
+                    <TextBox   Grid.Row="1" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="FullName"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.FullName, Mode=OneWay}" FontWeight="SemiBold"/>
+                </Grid>
+            </StackPanel>
+
+            <Rectangle Height="1" Fill="{ThemeResource DividerStrokeColorDefaultBrush}"/>
+
+            <!-- Section 2: 属性值校验器 -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="3. 属性校验：Age (0..130)" FontWeight="SemiBold"/>
+                <TextBlock Text="输入非法值将触发校验并显示错误" Opacity="0.8"/>
+
+                <Grid ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Age (文本)"/>
+                    <TextBox   Grid.Row="0" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.AgeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                               PlaceholderText="0..130"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="当前 Age"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.Age, Mode=OneWay}"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="验证错误"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1"
+                               Text="{x:Bind MainViewModel.AgeErrorsText, Mode=OneWay}"
+                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Section 3. 异步命令演示（IAsyncAction）-->
+            <StackPanel Spacing="8">
+                <TextBlock Text="4. 异步命令：保存示例（IAsyncAction）" FontWeight="SemiBold"/>
+                <TextBlock Text="IsValid 为 true 且不忙时可执行；执行期间自动禁用，可取消" Opacity="0.8"/>
+
+                <Grid ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="IsValid"/>
+                    <ToggleSwitch Grid.Row="0" Grid.Column="1"
+                      IsOn="{x:Bind MainViewModel.IsValid, Mode=TwoWay}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="IsBusy"/>
+                    <ToggleSwitch Grid.Row="1" Grid.Column="1"
+                      IsOn="{x:Bind MainViewModel.IsBusy, Mode=TwoWay}" IsEnabled="False"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Status"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind MainViewModel.StatusText, Mode=OneWay}"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="Actions"/>
+                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button
+                            Content="Save (Async)"
+                            Command="{x:Bind MainViewModel.AsyncCommand}" />
+                        <Button
+                            Content="Cancel"
+                            Command="{x:Bind MainViewModel.CancelAsyncOpCommand}"
+                             />
+                        <ProgressRing IsActive="{x:Bind MainViewModel.IsBusy, Mode=OneWay}" Width="24" Height="24"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

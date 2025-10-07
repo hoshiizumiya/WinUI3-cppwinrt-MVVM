@@ -115,6 +115,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Helpers\ObjectConverter.hpp" />
+    <ClInclude Include="mvvm_framework\async_command_builder.h" />
+    <ClInclude Include="mvvm_framework\async_command.h" />
     <ClInclude Include="mvvm_framework\delegate_command.h" />
     <ClInclude Include="mvvm_framework\delegate_command_builder.h" />
     <ClInclude Include="mvvm_framework\mvvm_diagnostics.h" />
@@ -125,6 +127,10 @@
     <ClInclude Include="mvvm_framework\view_model.h" />
     <ClInclude Include="mvvm_framework\view_model_base.h" />
     <ClInclude Include="mvvm_framework\view_sync_data_context.h" />
+    <ClInclude Include="mvvm_framework\mvvm_framework_events.h">
+      <DependentUpon>mvvm_framework\mvvm_framework_events.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.xaml.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -132,8 +138,12 @@
     <ClInclude Include="MainWindow.xaml.h">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ViewModel\MyEntityViewModel.h">
-      <DependentUpon>ViewModel\MyEntityViewModel.cpp</DependentUpon>
+    <ClInclude Include="Models\MyEntity.h">
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ViewModels\Locator.h" />
+    <ClInclude Include="ViewModels\MyEntityViewModel.h">
+      <DependentUpon>ViewModels\MyEntityViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="View\MyEntityView.xaml.h">
@@ -160,7 +170,16 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="ViewModel\MyEntityViewModel.cpp">
+    <ClCompile Include="ViewModels\Locator.cpp" />
+    <ClCompile Include="ViewModels\MyEntityViewModel.cpp">
+      <DependentUpon>ViewModels\MyEntityViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="mvvm_framework\mvvm_framework_events.cpp">
+      <DependentUpon>mvvm_framework\mvvm_framework_events.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Models\MyEntity.cpp">
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="View\MyEntityView.xaml.cpp">
@@ -173,8 +192,10 @@
       <SubType>Code</SubType>
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Midl>
-    <Midl Include="ViewModel\MyEntityViewModel.idl">
-      <DependentUpon>ViewModel\MyEntityViewModel.cpp</DependentUpon>
+    <Midl Include="mvvm_framework\mvvm_framework_events.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ViewModels\MyEntityViewModel.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="View\MyEntityView.idl">

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "ViewModel/MyEntityViewModel.h"
+#include "ViewModels/MyEntityViewModel.h"
 #include "View/MyEntityView.g.h"
 
 namespace winrt::WinUI3MVVMSample1::View::implementation

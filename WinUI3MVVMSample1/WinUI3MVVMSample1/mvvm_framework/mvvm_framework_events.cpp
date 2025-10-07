@@ -1,12 +1,6 @@
 ﻿#include "pch.h"
-#include "MvvmFrameworkEvents.h"
+#include "mvvm_framework_events.h"
 
-/*
-    #include "Mvvm/Framework/Core/CanExecuteRequestedEventArgs.g.h"
-    #include "Mvvm/Framework/Core/CanExecuteCompletedEventArgs.g.h"
-    #include "Mvvm/Framework/Core/ExecuteRequestedEventArgs.g.h"
-    #include "Mvvm/Framework/Core/ExecuteCompletedEventArgs.g.h"
-*/
 #if __has_include("Mvvm/Framework/Core/CanExecuteRequestedEventArgs.g.cpp")
 #include "Mvvm/Framework/Core/CanExecuteRequestedEventArgs.g.cpp"
 #endif
@@ -20,6 +14,15 @@
 #include "Mvvm/Framework/Core/ExecuteCompletedEventArgs.g.cpp"
 #endif
 
+#if __has_include("Mvvm/Framework/Core/ValidationRequestedEventArgs.g.cpp")
+#include "Mvvm/Framework/Core/ValidationRequestedEventArgs.g.cpp"
+#endif
+#if __has_include("Mvvm/Framework/Core/ValidationCompletedEventArgs.g.cpp")
+#include "Mvvm/Framework/Core/ValidationCompletedEventArgs.g.cpp"
+#endif
+#if __has_include("Mvvm/Framework/Core/ValidationErrorsChangedEventArgs.g.cpp")
+#include "Mvvm/Framework/Core/ValidationErrorsChangedEventArgs.g.cpp"
+#endif
 
 namespace winrt::Mvvm::Framework::Core::implementation
 {

@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "App.xaml.g.h"
-#include "ViewModel\MyEntityViewModel.h"
+#include "ViewModels\MyEntityViewModel.h"
 
 namespace winrt::WinUI3MVVMSample1::implementation
 {
