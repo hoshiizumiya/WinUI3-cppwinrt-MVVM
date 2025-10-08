@@ -265,6 +265,11 @@ namespace mvvm
             m_dependsOnBySource[std::wstring{ source }].emplace_back(dependent);
         }
 
+        void ClearDependencies()
+        {
+            m_dependsOnBySource = {};
+        }
+
         void ClearDependenciesFrom(std::wstring_view source)
         {
             m_dependsOnBySource.erase(std::wstring{ source });
@@ -281,9 +286,14 @@ namespace mvvm
                 });
         }
 
-        void ClearValidators(std::wstring_view property)
+        void ClearValidatorsOfProperty(std::wstring_view property)
         {
             m_validators.erase(std::wstring{ property });
+        }
+
+        void ClearValidators()
+        {
+            m_validators = {};
         }
 
         // 校验值是否正确，并在出错时存储错误信息；函数返回值表示校验结果是否正确

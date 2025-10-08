@@ -32,6 +32,13 @@ namespace winrt::WinUI3MVVMSample1::View::implementation
         vm_ptr->SetDispatcherQueue(winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread());
     }
 
+    void MyEntityView::MyEntityViewClickUnBind(
+        winrt::Windows::Foundation::IInspectable const& /*sender*/, 
+        winrt::Microsoft::UI::Xaml::RoutedEventArgs const& /*args*/)
+    {
+        WinUI3MVVMSample1::ViewModels::Locator::ResetViewModel(MainViewModel());
+    }
+
     WinUI3MVVMSample1::MyEntityViewModel implementation::MyEntityView::MainViewModel()
     {
         return view_base::m_viewModel;

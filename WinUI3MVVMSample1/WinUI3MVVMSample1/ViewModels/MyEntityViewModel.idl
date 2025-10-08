@@ -1,8 +1,12 @@
-﻿namespace WinUI3MVVMSample1
+﻿import "mvvm_framework/mvvm_framework_inf.idl";
+
+namespace WinUI3MVVMSample1
 {
     [default_interface]
     runtimeclass MyEntityViewModel
         : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+        , Mvvm.Framework.Core.IViewModelCleanup
+        , Mvvm.Framework.Core.IAutoCleanupRegister
     {
         MyEntityViewModel();
         Int32 MyProperty;

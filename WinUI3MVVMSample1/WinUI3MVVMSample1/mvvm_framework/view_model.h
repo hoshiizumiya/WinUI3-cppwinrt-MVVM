@@ -13,12 +13,16 @@
 #define __MVVM_CPPWINRT_VIEW_MODEL_H_INCLUDED
 
 #include "view_model_base.h"
+#include "subscription_tracker.h"
+
 #include <winrt/Microsoft.UI.Dispatching.h>
+
 
 namespace mvvm
 {
     template <typename Derived>
-    struct __declspec(empty_bases)ViewModel : ViewModelBase<Derived>
+    struct __declspec(empty_bases)ViewModel
+        : ViewModelBase<Derived>
     {
         friend typename Derived;
 
@@ -31,14 +35,7 @@ namespace mvvm
             else
             {
                 m_dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
-                //if (!m_dispatcher)
-                //{
-                //    // 尝试从窗口获取 DispatcherQueue
-                //    if (auto window = winrt::Microsoft::UI::Xaml::Window::Current())
-                //    {
-                //        m_dispatcher = window.DispatcherQueue();
-                //    }
-                //}
+
                 if (!m_dispatcher)
                 {
                     throw winrt::hresult_wrong_thread(L"ViewModels must be instantiated on a UI thread."sv);
@@ -49,6 +46,78 @@ namespace mvvm
         winrt::Microsoft::UI::Dispatching::DispatcherQueue Dispatcher() const { return m_dispatcher; }
 
         winrt::Microsoft::UI::Dispatching::DispatcherQueue GetDispatcherOverride() { return m_dispatcher; }
+
+        void RegisterForAutoCleanup(winrt::Windows::Foundation::IInspectable const& obj)
+        {
+            if (obj) m_cleanupObjects.push_back(winrt::make_weak(obj));
+        }
+
+        void FrameworkCleanup() noexcept
+        {
+            // 取消正在执行的命令
+            for (auto it = m_cleanupObjects.begin(); it != m_cleanupObjects.end(); )
+            {
+                if (auto obj = it->get())
+                {
+                    if (auto cmdc = obj.try_as<winrt::Mvvm::Framework::Core::ICommandCleanup>())
+                        cmdc.Cancel();
+                    ++it;
+                }
+                else it = m_cleanupObjects.erase(it);
+            }
+
+            // 解除注册的依赖关系
+            for (auto it = m_cleanupObjects.begin(); it != m_cleanupObjects.end(); )
+            {
+                if (auto obj = it->get())
+                {
+                    if (auto cmdc = obj.try_as<winrt::Mvvm::Framework::Core::ICommandCleanup>())
+                    {
+                        cmdc.DetachAllDependencies();
+                        cmdc.ClearAllSubscribers();
+                        cmdc.ResetHandlers();
+                    }
+                    ++it;
+                }
+                else it = m_cleanupObjects.erase(it);
+            }
+
+            // 清理 VM 自己的依赖广播/校验器
+            if constexpr (requires(Derived d) { d.ClearDependencies(); })
+            {
+                try {
+                    this->derived().ClearDependencies();
+                }
+                catch (...) {}
+            }
+            if constexpr (requires(Derived d) { d.ClearValidators(); })
+            {
+                try {
+                    this->derived().ClearValidators();
+                }
+                catch (...) {}
+            }
+
+            UnbindAll();
+        }
+
+        // 注册解绑所需要的执行的回调
+        template<typename F>
+        void TrackUnbind(F&& f) { m_subscTracker.Track(std::forward<F>(f)); }
+
+        // 主动清理（供 Reset/析构 等调用）
+        // 支持 OnUnbind 扩展点
+        void UnbindAll() noexcept
+        {
+            m_subscTracker.Clear();
+            if constexpr (requires(Derived d) { d.OnUnbind(); })
+            {
+                try {
+                    this->derived().OnUnbind();
+                }
+                catch (...) {}
+            }
+        }
 
     private:
         ViewModel() : ViewModel(nullptr)
@@ -61,6 +130,9 @@ namespace mvvm
 
     protected:
         winrt::Microsoft::UI::Dispatching::DispatcherQueue m_dispatcher{ nullptr };
+
+        std::vector<winrt::weak_ref<winrt::Windows::Foundation::IInspectable>> m_cleanupObjects;
+        ::mvvm::SubscriptionTracker m_subscTracker;
     };
 }
 

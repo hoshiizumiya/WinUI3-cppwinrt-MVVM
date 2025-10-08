@@ -5,10 +5,13 @@ namespace winrt::WinUI3MVVMSample1::ViewModels
 {
     struct Locator
     {
-        // 提供给 View 的投影类型（非 implementation）
+        // 提供给 View 的投影类型
         static WinUI3MVVMSample1::MyEntityViewModel MyEntity();
 
-        // 可选：测试/切换场景下重置（这里留空实现）
-        static void Reset();
+        // 重置 ViewModel
+        static void ResetViewModel(winrt::Windows::Foundation::IInspectable const& viewModel);
+
+    private:
+        static winrt::WinUI3MVVMSample1::MyEntityViewModel s_myEntityViewModel;
     };
 }

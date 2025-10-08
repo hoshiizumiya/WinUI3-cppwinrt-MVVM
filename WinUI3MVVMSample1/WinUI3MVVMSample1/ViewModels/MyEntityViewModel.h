@@ -67,6 +67,9 @@ namespace winrt::WinUI3MVVMSample1::implementation
         winrt::Windows::Foundation::IAsyncAction DoSaveAsync();
         void                                    CancelSave();
 
+
+        void            FrameworkCleanup();
+        void            RegisterForAutoCleanup(winrt::Windows::Foundation::IInspectable const& obj);
     private:
         // 业务服务
         std::shared_ptr<WinUI3MVVMSample1::Models::IMyEntityService> m_service{ std::make_shared<WinUI3MVVMSample1::Models::MyEntityService>() };

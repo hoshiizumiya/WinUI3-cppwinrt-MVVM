@@ -120,9 +120,11 @@
     <ClInclude Include="mvvm_framework\delegate_command.h" />
     <ClInclude Include="mvvm_framework\delegate_command_builder.h" />
     <ClInclude Include="mvvm_framework\mvvm_diagnostics.h" />
+    <ClInclude Include="mvvm_framework\mvvm_hresult_helper.h" />
     <ClInclude Include="mvvm_framework\name_of.h" />
     <ClInclude Include="mvvm_framework\notify_property_changed.h" />
     <ClInclude Include="mvvm_framework\property_macros.h" />
+    <ClInclude Include="mvvm_framework\subscription_tracker.h" />
     <ClInclude Include="mvvm_framework\view.h" />
     <ClInclude Include="mvvm_framework\view_model.h" />
     <ClInclude Include="mvvm_framework\view_model_base.h" />
@@ -192,6 +194,7 @@
       <SubType>Code</SubType>
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Midl>
+    <Midl Include="mvvm_framework\mvvm_framework_inf.idl" />
     <Midl Include="mvvm_framework\mvvm_framework_events.idl">
       <SubType>Code</SubType>
     </Midl>

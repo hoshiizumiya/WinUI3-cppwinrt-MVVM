@@ -4,6 +4,8 @@
 #include "MyEntityViewModel.g.cpp"
 #endif
 
+#include "mvvm_framework/mvvm_hresult_helper.h"
+
 using namespace winrt;
 using namespace Windows::Foundation;
 using namespace Microsoft::UI::Xaml;
@@ -84,6 +86,13 @@ namespace winrt::WinUI3MVVMSample1::implementation
             .DependsOn(L"IsBusy")
             .Build();
 
+        // TODO: vm 的注册绑定解除写的不太好，目前需要我们手动调用注册清理的方法。
+        // 当然这个AutoCleanup并非是指我不调用框架就不会在析构时自动释放对象了。
+        // 而是指当请求解绑定一个 VM 时，需要提交释放的对象。
+        RegisterForAutoCleanup(m_resetCommand);
+        RegisterForAutoCleanup(m_asyncCommand);
+        RegisterForAutoCleanup(m_cancelAsyncOpCommand);
+
         // 注册基于属性依赖的多属性更改通知：FullName 依赖 First/Last。当 First/Last 变化时，FullName 也会变化。
         RegisterDependency(L"FirstName", { L"FullName" });
         RegisterDependency(L"LastName", { L"FullName" });
@@ -97,7 +106,7 @@ namespace winrt::WinUI3MVVMSample1::implementation
             });
 
         // 订阅事件
-        auto dc = m_resetCommand.as<::mvvm::DelegateCommand<winrt::Windows::Foundation::IInspectable>>();
+        auto dc = winrt::get_self< ::mvvm::DelegateCommand<winrt::Windows::Foundation::IInspectable> >(m_resetCommand);
 
         dc->CanExecuteRequested(
             [](auto&& sender, auto&& args)
@@ -149,8 +158,11 @@ namespace winrt::WinUI3MVVMSample1::implementation
             auto weak = get_weak();
             ac->ExecuteCompleted([weak](auto&&, winrt::Mvvm::Framework::Core::ExecuteCompletedEventArgs const& args)
                 {
-                    const auto canceledHr = static_cast<int32_t>(winrt::hresult_canceled().code().value);
-                    if (args.Error() != canceledHr)
+                    // TODO: 存在小问题，调试模式下为了防止异常被VS捕获后，UI 不能及时更新 Save cancelled.
+                    // 故我们需要在事件中再次处理，这有点麻烦，
+                    // 其实我们建议单独为 AsyncCommand 的取消操作提供一个事件，然后在那个事件的回调中统一地进行用户端点处理
+                    // DoSaveAsync() 的处理完全可以通过事件来完成，而且也不需要一个额外的命令（m_cancelAsyncOpCommand）来绑定啦
+                    if (args.Error() != mvvm::HResultHelper::hresult_error_fCanceled())
                         return;
 
                     if (auto self = weak.get(); self)
@@ -308,4 +320,59 @@ namespace winrt::WinUI3MVVMSample1::implementation
             });
         cmd->Cancel();
     }
+
+    // 我们已经通过框架内置了处理流程，只需要少量的代码即可使用，而不需要再定义下述内容。
+    // 参见：Locator::ResetViewModel 方法
+    // 
+    //void MyEntityViewModel::Cleanup()
+    //{
+    //    // 先取消正在执行的异步，避免回调在解绑后触发
+    //    CancelSave();
+
+    //    // 命令解绑
+    //    if (auto dc = m_resetCommand.try_as<Mvvm::Framework::Core::ICommandCleanup>())
+    //    {
+    //        dc.DetachAllDependencies();
+    //        dc.ClearAllSubscribers();
+    //        dc.ResetHandlers();
+    //    }
+
+    //    if (auto ac = m_asyncCommand.try_as<Mvvm::Framework::Core::ICommandCleanup>())
+    //    {
+    //        ac.DetachAllDependencies();
+    //        ac.ClearAllSubscribers();
+    //        ac.ResetHandlers();
+    //    }
+
+    //    if (auto cc = m_cancelAsyncOpCommand.try_as<Mvvm::Framework::Core::ICommandCleanup>())
+    //    {
+    //        cc.DetachAllDependencies();
+    //        cc.ClearAllSubscribers();
+    //        cc.ResetHandlers();
+    //    }
+
+    //    // 清理校验器 / 依赖广播
+    //    ClearValidators();
+    //    ClearDependencies();
+
+    //    // 释放命令对象
+    //    m_resetCommand = nullptr;
+    //    m_asyncCommand = nullptr;
+    //    m_cancelAsyncOpCommand = nullptr;
+    //}
+
+    // IViewModelCleanup.Cleanup
+    void MyEntityViewModel::FrameworkCleanup()
+    {
+        // 调用基类
+        this->ViewModel<MyEntityViewModel>::FrameworkCleanup();
+    }
+
+    // IAutoCleanupRegistrar.RegisterForAutoCleanup
+    void MyEntityViewModel::RegisterForAutoCleanup(winrt::Windows::Foundation::IInspectable const& obj)
+    {
+        // 调用基类
+        this->ViewModel<MyEntityViewModel>::RegisterForAutoCleanup(obj);
+    }
+
 }

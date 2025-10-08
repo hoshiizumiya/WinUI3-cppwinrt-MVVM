@@ -12,6 +12,7 @@
 
 #include <mvvm_framework/mvvm_framework_events.h>  // Can/Execute EventArgs (same as sync)
 #include <mvvm_framework/mvvm_diagnostics.h>     // optional
+#include "mvvm_framework/mvvm_hresult_helper.h"
 
 namespace mvvm
 {
@@ -26,7 +27,7 @@ namespace mvvm
     //  Helpers for parameter dispatching (same rules as delegate_command)
     // =========================================================================================
     template<typename Parameter, typename Fn>
-    inline auto invoke_with_parameter(Fn&& fn,
+    inline auto SmartInvoke(Fn&& fn,
         winrt::Windows::Foundation::IInspectable const& parameter)
     {
         using NakedParameterType = std::conditional_t<std::is_same_v<Parameter, void>, void,
@@ -56,7 +57,9 @@ namespace mvvm
     // =========================================================================================
     template <typename Parameter = void>
     struct AsyncDelegateCommand
-        : winrt::implements<AsyncDelegateCommand<Parameter>, winrt::Microsoft::UI::Xaml::Input::ICommand>
+        : winrt::implements<AsyncDelegateCommand<Parameter>
+            , winrt::Microsoft::UI::Xaml::Input::ICommand
+            , winrt::Mvvm::Framework::Core::ICommandCleanup>
     {
         using ExecuteAsyncHandler = std::function<winrt::Windows::Foundation::IAsyncAction(
             std::add_lvalue_reference_t<std::conditional_t<std::is_same_v<Parameter, void>, void,
@@ -171,7 +174,7 @@ namespace mvvm
 
             if (ok && m_canExecute)
             {
-                ok = invoke_with_parameter<Parameter>(m_canExecute, parameter);
+                ok = SmartInvoke<Parameter>(m_canExecute, parameter);
             }
 
             // Completed
@@ -195,7 +198,7 @@ namespace mvvm
             winrt::hresult hr = S_OK;
             try
             {
-                m_runningAction = invoke_with_parameter<Parameter>(m_executeAsync, parameter);
+                m_runningAction = SmartInvoke<Parameter>(m_executeAsync, parameter);
 
                 // 完成回调：设置状态为完成态 Completed（不使用 co_await 以免捕获上下文）
                 auto weak = this->get_weak();
@@ -213,7 +216,7 @@ namespace mvvm
                             int32_t hrLocal = S_OK;
                             if (status == winrt::Windows::Foundation::AsyncStatus::Canceled)
                             {
-                                hrLocal = static_cast<int32_t>(winrt::hresult_canceled().code());
+                                hrLocal = mvvm::HResultHelper::hresult_error_fCanceled();
                             }
                             else if (status == winrt::Windows::Foundation::AsyncStatus::Error)
                             {
@@ -358,7 +361,147 @@ namespace mvvm
             }
         }
 
+        // 取消注册（Detach/Unregister）
+
+        // 仅移除“CanExecute 重新评估”的属性依赖（RelayDependency）
+        void DetachRelayDependencies() noexcept
+        {
+            for (size_t i = 0; i < m_dependencyNotifiers.size(); ++i)
+                if (auto inpc = m_dependencyNotifiers[i].get())
+                    inpc.PropertyChanged(m_dependencyTokens[i]);
+
+            m_dependencyNotifiers.clear();
+            m_dependencyTokens.clear();
+        }
+
+        // 仅移除“自动执行”的属性依赖（AutoExecute）
+        void DetachAutoExecuteDependencies() noexcept
+        {
+            for (size_t i = 0; i < m_autoExecuteNotifiers.size(); ++i)
+                if (auto inpc = m_autoExecuteNotifiers[i].get())
+                    inpc.PropertyChanged(m_autoExecuteTokens[i]);
+
+            m_autoExecuteNotifiers.clear();
+            m_autoExecuteTokens.clear();
+        }
+
+        // 移除当前命令上所有的依赖
+        void DetachAllDependencies() noexcept
+        {
+            DetachRelayDependencies();
+            DetachAutoExecuteDependencies();
+        }
+
+        // 清理已过期（notifier 已销毁）的订阅，返回移除的数量
+        size_t PruneExpiredDependencies() noexcept
+        {
+            size_t pruned = 0;
+
+            // RelayDependency
+            for (size_t i = m_dependencyNotifiers.size(); i-- > 0; )
+            {
+                if (!m_dependencyNotifiers[i].get())
+                {
+                    m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                    m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                    ++pruned;
+                }
+            }
+
+            // AutoExecute
+            for (size_t i = m_autoExecuteNotifiers.size(); i-- > 0; )
+            {
+                if (!m_autoExecuteNotifiers[i].get())
+                {
+                    m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                    m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                    ++pruned;
+                }
+            }
+
+            return pruned;
+        }
+
+        // 取消附加来自特定 INotifyPropertyChanged 的依赖（RelayDependency/AutoExecute）
+        void DetachFrom(winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged const& notifier) noexcept
+        {
+            auto const id = winrt::get_abi(notifier);
+
+            // RelayDependency
+            for (size_t i = m_dependencyNotifiers.size(); i-- > 0; )
+            {
+                if (auto strong = m_dependencyNotifiers[i].get())
+                {
+                    if (winrt::get_abi(strong) == id)
+                    {
+                        strong.PropertyChanged(m_dependencyTokens[i]);
+                        m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                        m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                    }
+                }
+                else
+                {
+                    // 清理已过期的订阅
+                    m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                    m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                }
+            }
+
+            // AutoExecute
+            for (size_t i = m_autoExecuteNotifiers.size(); i-- > 0; )
+            {
+                if (auto strong = m_autoExecuteNotifiers[i].get())
+                {
+                    if (winrt::get_abi(strong) == id)
+                    {
+                        strong.PropertyChanged(m_autoExecuteTokens[i]);
+                        m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                        m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                    }
+                }
+                else
+                {
+                    m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                    m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                }
+            }
+        }
+
+        // 重置处理器 / 清空订阅者
+
+        // 清空 Execute/CanExecute 的委托
+        void ResetHandlers() noexcept
+        {
+            m_executeAsync = {};
+            m_canExecute = {};
+        }
+
+        // 清空命令外部订阅事件的订阅者（CanExecuteChanged/Requested/...）
+        void ClearAllSubscribers() noexcept
+        {
+            ResetEventInPlace(m_canExecuteChanged);
+            ResetEventInPlace(m_evtCanReq);
+            ResetEventInPlace(m_evtCanCpl);
+            ResetEventInPlace(m_evtExecReq);
+            ResetEventInPlace(m_evtExecCpl);
+        }
+
+        // 判断是否有依赖（RelayDependency/AutoExecute）
+        bool HasDependencies() const noexcept
+        {
+            return !m_dependencyNotifiers.empty() || !m_autoExecuteNotifiers.empty();
+        }
+
     private:
+        template <typename E>
+        static void ResetEventInPlace(E& e) noexcept
+        {
+            using std::destroy_at;
+            using std::construct_at;
+            destroy_at(std::addressof(e));   // 调用事件对象的析构函数，释放全部订阅
+            construct_at(std::addressof(e)); // 默认构造一个全新的 event 对象
+        }
+
         ExecuteAsyncHandler  m_executeAsync;
         CanExecuteHandler    m_canExecute;
 
@@ -391,7 +534,9 @@ namespace mvvm
     // =========================================================================================
     template <typename Parameter, typename TResult>
     struct AsyncDelegateCommandResult
-        : winrt::implements<AsyncDelegateCommandResult<Parameter, TResult>, winrt::Microsoft::UI::Xaml::Input::ICommand>
+        : winrt::implements<AsyncDelegateCommandResult<Parameter, TResult>
+            , winrt::Microsoft::UI::Xaml::Input::ICommand
+            , winrt::Mvvm::Framework::Core::ICommandCleanup>
     {
         using ExecuteAsyncHandler = std::function<winrt::Windows::Foundation::IAsyncOperation<TResult>(
             std::add_lvalue_reference_t<std::conditional_t<std::is_same_v<Parameter, void>, void,
@@ -454,7 +599,7 @@ namespace mvvm
 
             bool ok = !(m_isRunning && !m_allowReentrancy);
             if (ok && m_canExecute)
-                ok = invoke_with_parameter<Parameter>(m_canExecute, parameter);
+                ok = SmartInvoke<Parameter>(m_canExecute, parameter);
 
             if (m_evtCanCpl)
                 m_evtCanCpl(*this, winrt::Mvvm::Framework::Core::CanExecuteCompletedEventArgs(parameter, ok));
@@ -474,7 +619,7 @@ namespace mvvm
             winrt::hresult hr = S_OK;
             try
             {
-                m_runningOp = invoke_with_parameter<Parameter>(m_executeAsync, parameter);
+                m_runningOp = SmartInvoke<Parameter>(m_executeAsync, parameter);
 
                 auto weak = this->get_weak();
                 m_runningOp.Completed([weak, parameter](
@@ -489,7 +634,7 @@ namespace mvvm
                             int32_t hrLocal = S_OK;
                             if (status == winrt::Windows::Foundation::AsyncStatus::Canceled)
                             {
-                                hrLocal = static_cast<int32_t>(winrt::hresult_canceled().code());
+                                hrLocal = mvvm::HResultHelper::hresult_error_fCanceled();
                             }
                             else if (status == winrt::Windows::Foundation::AsyncStatus::Error)
                             {
@@ -607,7 +752,147 @@ namespace mvvm
             }
         }
 
+        // 取消注册（Detach/Unregister）
+        
+        // 仅移除“CanExecute 重新评估”的属性依赖（RelayDependency）
+        void DetachRelayDependencies() noexcept
+        {
+            for (size_t i = 0; i < m_dependencyNotifiers.size(); ++i)
+                if (auto inpc = m_dependencyNotifiers[i].get())
+                    inpc.PropertyChanged(m_dependencyTokens[i]);
+
+            m_dependencyNotifiers.clear();
+            m_dependencyTokens.clear();
+        }
+
+        // 仅移除“自动执行”的属性依赖（AutoExecute）
+        void DetachAutoExecuteDependencies() noexcept
+        {
+            for (size_t i = 0; i < m_autoExecuteNotifiers.size(); ++i)
+                if (auto inpc = m_autoExecuteNotifiers[i].get())
+                    inpc.PropertyChanged(m_autoExecuteTokens[i]);
+
+            m_autoExecuteNotifiers.clear();
+            m_autoExecuteTokens.clear();
+        }
+
+        // 移除当前命令上所有的依赖
+        void DetachAllDependencies() noexcept
+        {
+            DetachRelayDependencies();
+            DetachAutoExecuteDependencies();
+        }
+
+        // 清理已过期（notifier 已销毁）的订阅，返回移除的数量
+        size_t PruneExpiredDependencies() noexcept
+        {
+            size_t pruned = 0;
+
+            // RelayDependency
+            for (size_t i = m_dependencyNotifiers.size(); i-- > 0; )
+            {
+                if (!m_dependencyNotifiers[i].get())
+                {
+                    m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                    m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                    ++pruned;
+                }
+            }
+
+            // AutoExecute
+            for (size_t i = m_autoExecuteNotifiers.size(); i-- > 0; )
+            {
+                if (!m_autoExecuteNotifiers[i].get())
+                {
+                    m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                    m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                    ++pruned;
+                }
+            }
+
+            return pruned;
+        }
+
+        // 取消附加来自特定 INotifyPropertyChanged 的依赖（RelayDependency/AutoExecute）
+        void DetachFrom(winrt::Microsoft::UI::Xaml::Data::INotifyPropertyChanged const& notifier) noexcept
+        {
+            auto const id = winrt::get_abi(notifier);
+
+            // RelayDependency
+            for (size_t i = m_dependencyNotifiers.size(); i-- > 0; )
+            {
+                if (auto strong = m_dependencyNotifiers[i].get())
+                {
+                    if (winrt::get_abi(strong) == id)
+                    {
+                        strong.PropertyChanged(m_dependencyTokens[i]);
+                        m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                        m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                    }
+                }
+                else
+                {
+                    // 清理已过期的订阅
+                    m_dependencyNotifiers.erase(m_dependencyNotifiers.begin() + i);
+                    m_dependencyTokens.erase(m_dependencyTokens.begin() + i);
+                }
+            }
+
+            // AutoExecute
+            for (size_t i = m_autoExecuteNotifiers.size(); i-- > 0; )
+            {
+                if (auto strong = m_autoExecuteNotifiers[i].get())
+                {
+                    if (winrt::get_abi(strong) == id)
+                    {
+                        strong.PropertyChanged(m_autoExecuteTokens[i]);
+                        m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                        m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                    }
+                }
+                else
+                {
+                    m_autoExecuteNotifiers.erase(m_autoExecuteNotifiers.begin() + i);
+                    m_autoExecuteTokens.erase(m_autoExecuteTokens.begin() + i);
+                }
+            }
+        }
+
+        // 重置处理器 / 清空订阅者
+
+        // 清空 Execute/CanExecute 的委托
+        void ResetHandlers() noexcept
+        {
+            m_executeAsync = {};
+            m_canExecute = {};
+        }
+
+        // 清空命令外部订阅事件的订阅者（CanExecuteChanged/Requested/...）
+        void ClearAllSubscribers() noexcept
+        {
+            ResetEventInPlace(m_canExecuteChanged);
+            ResetEventInPlace(m_evtCanReq);
+            ResetEventInPlace(m_evtCanCpl);
+            ResetEventInPlace(m_evtExecReq);
+            ResetEventInPlace(m_evtExecCpl);
+        }
+
+        // 判断是否有依赖（RelayDependency/AutoExecute）
+        bool HasDependencies() const noexcept
+        {
+            return !m_dependencyNotifiers.empty() || !m_autoExecuteNotifiers.empty();
+        }
+
     private:
+        template <typename E>
+        static void ResetEventInPlace(E& e) noexcept
+        {
+            using std::destroy_at;
+            using std::construct_at;
+            destroy_at(std::addressof(e));   // 调用事件对象的析构函数，释放全部订阅
+            construct_at(std::addressof(e)); // 默认构造一个全新的 event 对象
+        }
+
         ExecuteAsyncHandler  m_executeAsync;
         CanExecuteHandler    m_canExecute;
         bool m_isRunning{ false };

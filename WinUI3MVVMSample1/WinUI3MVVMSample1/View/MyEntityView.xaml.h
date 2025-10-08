@@ -12,6 +12,8 @@ namespace winrt::WinUI3MVVMSample1::View::implementation
         MyEntityView();
         MyEntityView(winrt::WinUI3MVVMSample1::implementation::MyEntityViewModel::class_type const& viewModel);
 
+        void MyEntityViewClickUnBind(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& args);
+
         /*
             This is the getter method for getting the view-model.
             REMEMBER to use the one from "<Your App Name> namespace" instead of "<Your App Name>::implementation namespace"!
